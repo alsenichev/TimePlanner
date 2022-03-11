@@ -1,9 +1,6 @@
-using System.Net;
-using System.Text.Json;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using TimePlanner.DataAccess;
 using TimePlanner.Domain.Services.Interfaces;
 using TimePlanner.WebApi.Exceptions;
@@ -12,9 +9,13 @@ using TimePlanner.WebApi.Models.Requests;
 using TimePlanner.WebApi.Services;
 using TimePlanner.WebApi.Validators;
 
-var builder = WebApplication.CreateBuilder(args);
+var options = new WebApplicationOptions
+{
+  Args = args,
+  ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : default
+};
 
-// Add services to the container.
+WebApplicationBuilder builder = WebApplication.CreateBuilder(options);
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -26,9 +27,9 @@ builder.Services.AddScoped<IStatusService, StatusService>();
 builder.Services.AddScoped<IStatusMapper, StatusMapper>();
 builder.Services.AddScoped<IValidator<WorkItemRequest>, WorkItemRequestValidator>();
 
-var app = builder.Build();
+builder.Host.UseWindowsService();
 
-// Configure the HTTP request pipeline.
+var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
