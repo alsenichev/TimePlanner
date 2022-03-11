@@ -62,9 +62,9 @@ public class WorkItemList
   /// <summary>
   /// Total time distributed across work items.
   /// </summary>
-  public TimeSpanValue TotalDuration => durations.DistributedValue;
+  public TimeSpanValue DistributedTime => durations.DistributedValue;
 
-  /// <summary>
+ /// <summary>
   /// Get all work items.
   /// </summary>
   public List<WorkItem> GetWorkItems()

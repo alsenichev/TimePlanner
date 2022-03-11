@@ -9,11 +9,12 @@ internal class StatusMapper : IStatusMapper
   {
     return new StatusResponse(
       status.StartedAt,
+      status.BreakStartedAt,
       status.Deposit.Duration,
       status.Pause.Duration,
       new WorkingTimeResponse(
-        status.WorkingTime.Distributed.Duration,
-        status.WorkingTime.Undistributed.Duration),
+        status.RegisteredTime.Distributed.Duration,
+        status.RegisteredTime.Undistributed.Duration),
       status.WorkItems.Select(
         i => new WorkItemResponse(i.Name, i.Duration.Duration)).ToList());
   }

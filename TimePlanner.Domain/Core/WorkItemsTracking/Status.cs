@@ -5,12 +5,13 @@ namespace TimePlanner.Domain.Core.WorkItemsTracking
 {
   public record struct Status(
     DateTime StartedAt,
+    DateTime? BreakStartedAt,
     TimeSpanValue Deposit,
     TimeSpanValue Pause,
-    WorkingTime WorkingTime,
+    RegisteredTime RegisteredTime,
     List<WorkItem> WorkItems);
 
-  public record struct WorkingTime(TimeSpanValue Distributed, TimeSpanValue Undistributed)
+  public record struct RegisteredTime(TimeSpanValue Distributed, TimeSpanValue Undistributed)
   {
     public TimeSpanValue Total => Distributed + Undistributed;
   }

@@ -2,6 +2,7 @@
 {
   public record struct StatusResponse(
     DateTime StartedAt,
+    DateTime? BreakStartedAt,
     TimeSpan Deposit,
     TimeSpan Pause,
     WorkingTimeResponse WorkingTime,

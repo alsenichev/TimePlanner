@@ -25,7 +25,7 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
     {
       var workItemList = new WorkItemList();
 
-      Assert.AreEqual(TimeSpan.Zero, workItemList.TotalDuration.Duration);
+      Assert.AreEqual(TimeSpan.Zero, workItemList.DistributedTime.Duration);
       Assert.AreEqual(0, workItemList.GetWorkItems().Count);
     }
 
@@ -37,7 +37,7 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
 
       workItemList.AddWorkItem(workItemName);
 
-      Assert.AreEqual(TimeSpan.Zero, workItemList.TotalDuration.Duration);
+      Assert.AreEqual(TimeSpan.Zero, workItemList.DistributedTime.Duration);
       Assert.AreEqual(1, workItemList.GetWorkItems().Count);
       Assert.AreEqual(TimeSpan.Zero, workItemList.GetWorkItems()[0].Duration.Duration);
       Assert.AreEqual(workItemName, workItemList.GetWorkItems()[0].Name);
@@ -55,7 +55,7 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
       var exception = Assert.Throws<NoSegmentsAvailableException>(
         () => workItemList.AddWorkItem(workItemName));
 
-      Assert.AreEqual(TimeSpan.Zero, workItemList.TotalDuration.Duration);
+      Assert.AreEqual(TimeSpan.Zero, workItemList.DistributedTime.Duration);
       Assert.AreEqual(24 * 4, workItemList.GetWorkItems().Count);
     }
 
@@ -67,7 +67,7 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
       workItemList.AddWorkItem(fixture.Create<string>());
       workItemList.RemoveWorkItem(0);
 
-      Assert.AreEqual(TimeSpan.Zero, workItemList.TotalDuration.Duration);
+      Assert.AreEqual(TimeSpan.Zero, workItemList.DistributedTime.Duration);
       Assert.AreEqual(0, workItemList.GetWorkItems().Count);
     }
 
@@ -96,7 +96,7 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
       workItemList.AddWorkItem("new");
       workItemList.AddToDuration(1, TimeSpan.FromMinutes(3));
 
-      Assert.AreEqual(TimeSpan.FromMinutes(5), workItemList.TotalDuration.Duration);
+      Assert.AreEqual(TimeSpan.FromMinutes(5), workItemList.DistributedTime.Duration);
       Assert.AreEqual(2, workItemList.GetWorkItems().Count);
       Assert.AreEqual(TimeSpan.FromMinutes(2), workItemList.GetWorkItems()[0].Duration.Duration);
       Assert.AreEqual("2", workItemList.GetWorkItems()[0].Name);

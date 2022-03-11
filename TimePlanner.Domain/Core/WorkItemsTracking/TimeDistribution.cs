@@ -3,7 +3,7 @@
 namespace TimePlanner.Domain.Core.WorkItemsTracking
 {
   /// <summary>
-  /// Describes how the time during the day is distributed.
+  /// Describes how the time is distributed during the day.
   /// </summary>
   internal record TimeDistribution
   {
@@ -26,10 +26,10 @@ namespace TimePlanner.Domain.Core.WorkItemsTracking
     /// </summary>
     public TimeSpanValue LeisureTime => segments.GetSegmentValue(1);
 
-    /// <summary>
-    /// The time of the day that is not counted yet.
-    /// </summary>
-    public TimeSpanValue RemainingTime => segments.UndistributedValue;
+    public void ResetWorkingTime(TimeSpanValue duration)
+    {
+      segments.ResetSegment(0, duration);
+    }
 
     public void AddWorkingTime(TimeSpanValue duration)
     {

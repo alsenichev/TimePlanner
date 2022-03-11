@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using TimePlanner.DataAccess;
 using TimePlanner.Domain.Services.Interfaces;
+using TimePlanner.WebApi.Exceptions;
 using TimePlanner.WebApi.Mappers;
 using TimePlanner.WebApi.Models.Requests;
 using TimePlanner.WebApi.Services;
@@ -42,26 +43,8 @@ app.MapControllers();
 
 app.UseExceptionHandler(applicationBuilder =>
 {
-  applicationBuilder.Run(async httpContext =>
-  {
-    httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-    httpContext.Response.ContentType = "application/json";
-
-    var contextFeature = httpContext.Features.Get<IExceptionHandlerPathFeature>();
-    if (contextFeature != null)
-    {
-      var ex = contextFeature.Error;
-      await httpContext.Response.WriteAsync(JsonSerializer.Serialize(
-        new ProblemDetails
-        {
-          Type = ex.GetType().Name,
-          Status = (int)HttpStatusCode.InternalServerError,
-          Instance = contextFeature?.Path,
-          Title = ex.Message,
-          Detail = app.Environment.IsDevelopment() ? ex.StackTrace : null
-        }));
-    }
-  });
+  applicationBuilder.Run(
+    async httpContext => { await GlobalExceptionHandler.HandleException(httpContext); });
 });
 
 app.Run();

@@ -23,7 +23,7 @@
 
     private static readonly TimeSpanValue twentyFourHours = TimeSpan.FromHours(24);
 
-    private DaySegment(TimeSpanValue value)
+    public DaySegment(TimeSpanValue value)
     {
       Value = value;
     }

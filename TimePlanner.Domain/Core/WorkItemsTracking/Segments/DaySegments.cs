@@ -65,6 +65,22 @@
     }
 
     /// <summary>
+    /// Set new value of the segment.
+    /// </summary>
+    public void ResetSegment(int segmentIndex, TimeSpanValue duration)
+    {
+      if (segmentIndex < 0 || segmentIndex >= segments.Count)
+      {
+        throw new MissingSegmentException(segmentIndex);
+      }
+
+      TimeSpanValue currentValue = segments[segmentIndex].Value;
+      remainingTime.Increase(currentValue);
+      segments[segmentIndex].Decrease(currentValue);
+      AddToSegment(segmentIndex, duration);
+    }
+
+    /// <summary>
     /// Subtract the time span from the segment.
     /// </summary>
     public void RemoveFromSegment(int segmentIndex, TimeSpanValue duration)
