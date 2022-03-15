@@ -1,4 +1,5 @@
-﻿using TimePlanner.Domain.Core.WorkItemsTracking.Segments;
+﻿using System.Collections.ObjectModel;
+using TimePlanner.Domain.Core.WorkItemsTracking.Segments;
 
 namespace TimePlanner.Domain.Core.WorkItemsTracking.WorkItems;
 
@@ -8,6 +9,7 @@ namespace TimePlanner.Domain.Core.WorkItemsTracking.WorkItems;
 public class WorkItemList
 {
   private readonly DaySegments durations;
+  private readonly List<WorkItem> workItems;
 
   /// <summary>
   /// Constructor.
@@ -16,16 +18,23 @@ public class WorkItemList
   {
     const int maxWorkItemsCount = 24 * 4;
     durations = new DaySegments(maxWorkItemsCount);
-    WorkItems = new List<WorkItem>(maxWorkItemsCount);
+    workItems = new List<WorkItem>(maxWorkItemsCount);
   }
 
   /// <summary>
   /// Add a new work item.
   /// </summary>
-  public void AddWorkItem(string workItemName)
+  public void CreateWorkItem(string workItemName)
   {
     durations.CreateNewSegment();
-    WorkItems.Add(new WorkItem(null, workItemName, TimeSpan.Zero));
+    workItems.Add(new WorkItem(null, workItemName, TimeSpan.Zero));
+  }
+
+  public void AddWorkItem(WorkItem workItem)
+  {
+    int i = durations.CreateNewSegment();
+    durations.AddToSegment(i, workItem.Duration);
+    workItems.Add(workItem);
   }
 
   /// <summary>
@@ -33,8 +42,12 @@ public class WorkItemList
   /// </summary>
   public TimeSpanValue RemoveWorkItem(Guid workItemId)
   {
-    int index = WorkItems.FindIndex(i => i.Id == workItemId);
-    WorkItems.RemoveAt(index);
+    int index = workItems.FindIndex(i => i.Id == workItemId);
+    if (index < 0)
+    {
+      throw new MissingSegmentException();
+    }
+    workItems.RemoveAt(index);
     return durations.RemoveSegmentAt(index);
   }
 
@@ -43,9 +56,9 @@ public class WorkItemList
   /// </summary>
   public void AddToDuration(Guid workItemId, TimeSpanValue duration)
   {
-    int index = WorkItems.FindIndex(i => i.Id == workItemId);
+    int index = workItems.FindIndex(i => i.Id == workItemId);
     durations.AddToSegment(index, duration);
-    WorkItems[index] = WorkItems[index] with { Duration = durations.GetSegmentValue(index) };
+    workItems[index] = workItems[index] with { Duration = durations.GetSegmentValue(index) };
   }
 
   /// <summary>
@@ -53,19 +66,9 @@ public class WorkItemList
   /// </summary>
   public void RemoveFromDuration(Guid workItemId, TimeSpanValue duration)
   {
-    int index = WorkItems.FindIndex(i => i.Id == workItemId);
+    int index = workItems.FindIndex(i => i.Id == workItemId);
     durations.RemoveFromSegment(index, duration);
-    WorkItems[index] = WorkItems[index] with { Duration = durations.GetSegmentValue(index) };
-  }
-
-  public void ImportWorkItems(List<WorkItem> workItems)
-  {
-    for(int i = 0; i < workItems.Count; i++)
-    {
-      durations.CreateNewSegment();
-      durations.AddToSegment(i, workItems[i].Duration);
-      WorkItems.Add(workItems[i]);
-    }
+    workItems[index] = workItems[index] with { Duration = durations.GetSegmentValue(index) };
   }
 
   /// <summary>
@@ -76,5 +79,5 @@ public class WorkItemList
   /// <summary>
   /// Get all work items.
   /// </summary>
-  public List<WorkItem> WorkItems { get; }
+  public IReadOnlyCollection<WorkItem> WorkItems => new ReadOnlyCollection<WorkItem>(workItems);
 }

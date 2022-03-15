@@ -57,7 +57,7 @@
     {
       if (segmentIndex < 0 || segmentIndex >= segments.Count)
       {
-        throw new MissingSegmentException(segmentIndex);
+        throw new MissingSegmentException();
       }
 
       segments[segmentIndex].Increase(duration);
@@ -71,7 +71,7 @@
     {
       if (segmentIndex < 0 || segmentIndex >= segments.Count)
       {
-        throw new MissingSegmentException(segmentIndex);
+        throw new MissingSegmentException();
       }
 
       TimeSpanValue currentValue = segments[segmentIndex].Value;
@@ -87,7 +87,7 @@
     {
       if (segmentIndex < 0 || segmentIndex >= segments.Count)
       {
-        throw new MissingSegmentException(segmentIndex);
+        throw new MissingSegmentException();
       }
 
       segments[segmentIndex].Decrease(duration);
@@ -101,7 +101,7 @@
     {
       if (segmentIndex < 0 || segmentIndex >= segments.Count)
       {
-        throw new MissingSegmentException(segmentIndex);
+        throw new MissingSegmentException();
       }
 
       return segments[segmentIndex].Value;
@@ -114,7 +114,7 @@
     {
       if (segmentIndex < 0 || segmentIndex >= segments.Count)
       {
-        throw new MissingSegmentException(segmentIndex);
+        throw new MissingSegmentException();
       }
 
       TimeSpanValue result = segments[segmentIndex].Value;

@@ -32,29 +32,30 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
     [Test]
     public void TestAddWorkItem()
     {
-      string workItemName = fixture.Create<string>();
+      var workItemName = fixture.Create<string>();
       var workItemList = new WorkItemList();
 
-      workItemList.AddWorkItem(workItemName);
+      workItemList.CreateWorkItem(workItemName);
 
       Assert.AreEqual(TimeSpan.Zero, workItemList.DistributedTime.Duration);
       Assert.AreEqual(1, workItemList.WorkItems.Count);
-      Assert.AreEqual(TimeSpan.Zero, workItemList.WorkItems[0].Duration.Duration);
-      Assert.AreEqual(workItemName, workItemList.WorkItems[0].Name);
-      Assert.IsNull(workItemList.WorkItems[0].Id);
+      Assert.AreEqual(TimeSpan.Zero, workItemList.WorkItems.First().Duration.Duration);
+      Assert.AreEqual(workItemName, workItemList.WorkItems.First().Name);
+      Assert.IsNull(workItemList.WorkItems.First().Id);
     }
 
     [Test]
     public void TestAddWorkItemOverflow()
     {
-      string workItemName = fixture.Create<string>();
+      var workItemName = fixture.Create<string>();
       var workItemList = new WorkItemList();
-      for(int i = 0; i < 24 * 4; i++)
+      for (var i = 0; i < 24 * 4; i++)
       {
-        workItemList.AddWorkItem(fixture.Create<string>());
+        workItemList.CreateWorkItem(fixture.Create<string>());
       }
+
       var exception = Assert.Throws<NoSegmentsAvailableException>(
-        () => workItemList.AddWorkItem(workItemName));
+        () => workItemList.CreateWorkItem(workItemName));
 
       Assert.AreEqual(TimeSpan.Zero, workItemList.DistributedTime.Duration);
       Assert.AreEqual(24 * 4, workItemList.WorkItems.Count);
@@ -65,7 +66,7 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
     {
       var workItemList = new WorkItemList();
       var workItem = fixture.Create<WorkItem>();
-      workItemList.WorkItems.Add(workItem);
+      workItemList.AddWorkItem(workItem);
       workItemList.RemoveWorkItem(workItem.Id.Value);
 
       Assert.AreEqual(TimeSpan.Zero, workItemList.DistributedTime.Duration);
@@ -77,12 +78,10 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
     {
       var workItemList = new WorkItemList();
       var workItem = fixture.Create<WorkItem>();
-      workItemList.WorkItems.Add(workItem);
+      workItemList.AddWorkItem(workItem);
 
-      var ex = Assert.Throws<MissingSegmentException>(
+      Assert.Throws<MissingSegmentException>(
         () => workItemList.RemoveWorkItem(Guid.Empty));
-
-      Assert.AreEqual(2, ex.Index);
     }
 
     [Test]
@@ -92,17 +91,17 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
       var workItemOne = fixture.Create<WorkItem>();
       var workItemTwo = fixture.Create<WorkItem>();
       var workItemThree = fixture.Create<WorkItem>();
-      workItemList.WorkItems.Add(workItemOne);
-      workItemList.WorkItems.Add(workItemTwo);
+      workItemList.AddWorkItem(workItemOne);
+      workItemList.AddWorkItem(workItemTwo);
       workItemList.RemoveWorkItem(workItemOne.Id.Value);
-      workItemList.WorkItems.Add(workItemThree);
+      workItemList.AddWorkItem(workItemThree);
 
-      Assert.AreEqual(workItemTwo.Duration + workItemThree.Duration, workItemList.DistributedTime.Duration);
+      Assert.AreEqual(workItemTwo.Duration + workItemThree.Duration, workItemList.DistributedTime);
       Assert.AreEqual(2, workItemList.WorkItems.Count);
-      Assert.AreEqual(workItemTwo.Duration, workItemList.WorkItems[0].Duration);
-      Assert.AreEqual(workItemTwo.Name, workItemList.WorkItems[0].Name);
-      Assert.AreEqual(workItemThree.Duration, workItemList.WorkItems[1].Duration);
-      Assert.AreEqual(workItemThree.Name, workItemList.WorkItems[1].Name);
+      Assert.AreEqual(workItemTwo.Duration, workItemList.WorkItems.First().Duration);
+      Assert.AreEqual(workItemTwo.Name, workItemList.WorkItems.First().Name);
+      Assert.AreEqual(workItemThree.Duration, workItemList.WorkItems.ToList()[1].Duration);
+      Assert.AreEqual(workItemThree.Name, workItemList.WorkItems.ToList()[1].Name);
     }
 
     [Test]
@@ -111,11 +110,11 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
       var workItemList = new WorkItemList();
       var workItem = fixture.Create<WorkItem>();
       var timeSpan = fixture.Create<TimeSpan>();
-      workItemList.WorkItems.Add(workItem);
+      workItemList.AddWorkItem(workItem);
 
       workItemList.AddToDuration(workItem.Id.Value, timeSpan);
 
-      Assert.AreEqual(workItem.Duration + timeSpan, workItemList.WorkItems[0].Duration.Duration);
+      Assert.AreEqual(workItem.Duration + timeSpan, workItemList.WorkItems.First().Duration);
     }
 
     [Test]
@@ -123,11 +122,10 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
     {
       var workItemList = new WorkItemList();
       var workItem = fixture.Create<WorkItem>();
+      workItemList.AddWorkItem(workItem);
 
-      var ex = Assert.Throws<MissingSegmentException>(
+      Assert.Throws<MissingSegmentException>(
         () => workItemList.AddToDuration(Guid.Empty, fixture.Create<TimeSpan>()));
-      Assert.AreEqual(1, ex.Index);
-
     }
 
     [Test]
@@ -135,12 +133,12 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
     {
       var workItemList = new WorkItemList();
       var workItem = fixture.Create<WorkItem>();
-      var timeSpan = fixture.Create<TimeSpan>();
-      workItemList.WorkItems.Add(workItem);
+      var timeSpan = workItem.Duration - TimeSpan.FromMinutes(1);
+      workItemList.AddWorkItem(workItem);
 
-      workItemList.AddToDuration(workItem.Id.Value, timeSpan);
+      workItemList.RemoveFromDuration(workItem.Id.Value, timeSpan);
 
-      Assert.AreEqual(workItem.Duration - timeSpan, workItemList.WorkItems[0].Duration.Duration);
+      Assert.AreEqual(TimeSpan.FromMinutes(1), workItemList.WorkItems.First().Duration.Duration);
     }
 
     [Test]
@@ -148,10 +146,10 @@ namespace TimePlanner.Domain.UnitTests.Status.WorkItems
     {
       var workItemList = new WorkItemList();
       var workItem = fixture.Create<WorkItem>();
+      workItemList.AddWorkItem(workItem);
 
-      var ex = Assert.Throws<MissingSegmentException>(
+      Assert.Throws<MissingSegmentException>(
         () => workItemList.AddToDuration(Guid.Empty, fixture.Create<TimeSpan>()));
-      Assert.AreEqual(1, ex.Index);
     }
   }
 }

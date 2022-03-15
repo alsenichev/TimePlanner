@@ -2,7 +2,6 @@
 using AutoFixture.NUnit3;
 using NUnit.Framework;
 using TimePlanner.Domain.Core.WorkItemsTracking.Segments;
-using TimePlanner.Domain.Utils;
 
 namespace TimePlanner.Domain.UnitTests.Status.Segments;
 
@@ -69,10 +68,9 @@ public class DaySegmentsTests
     var segments = new DaySegments(defaultMaxSegmentsCount);
 
     segments.CreateNewSegment();
-    var exception = Assert.Throws<MissingSegmentException>(
+    Assert.Throws<MissingSegmentException>(
       () => segments.AddToSegment(1, fixture.Create<TimeSpan>()));
 
-    Assert.AreEqual(1, exception.Index);
     Assert.AreEqual(TimeSpan.Zero, segments.DistributedValue.Duration);
     Assert.AreEqual(twentyFour, segments.UndistributedValue.Duration);
     Assert.AreEqual(1, segments.Segments.Count);
@@ -88,8 +86,7 @@ public class DaySegmentsTests
     segments.CreateNewSegment();
     segments.CreateNewSegment();
 
-    var exception = Assert.Throws<NoSegmentsAvailableException>(
-      () => segments.CreateNewSegment());
+    Assert.Throws<NoSegmentsAvailableException>(() => segments.CreateNewSegment());
 
     Assert.AreEqual(TimeSpan.Zero, segments.DistributedValue.Duration);
     Assert.AreEqual(twentyFour, segments.UndistributedValue.Duration);
@@ -114,10 +111,9 @@ public class DaySegmentsTests
     var segments = new DaySegments(defaultMaxSegmentsCount);
     segments.CreateNewSegment();
 
-    var exception = Assert.Throws<MissingSegmentException>(
+    Assert.Throws<MissingSegmentException>(
       () => segments.GetSegmentValue(1));
 
-    Assert.AreEqual(1,exception.Index);
   }
 
   [Theory]
@@ -157,10 +153,8 @@ public class DaySegmentsTests
   {
     var segments = new DaySegments(defaultMaxSegmentsCount);
     segments.CreateNewSegment();
-    var exception = Assert.Throws<MissingSegmentException>(
+    Assert.Throws<MissingSegmentException>(
       () => segments.RemoveFromSegment(1, timeSpan));
-
-    Assert.AreEqual(1,exception?.Index);
   }
 
   [Test]
@@ -183,10 +177,7 @@ public class DaySegmentsTests
 
     segments.CreateNewSegment();
 
-    var exception = Assert.Throws<MissingSegmentException>(
-      () => segments.RemoveSegmentAt(1));
-
-    Assert.AreEqual(1, exception?.Index);
+    Assert.Throws<MissingSegmentException>(() => segments.RemoveSegmentAt(1));
   }
 
   [Test]

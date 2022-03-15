@@ -60,11 +60,9 @@ namespace TimePlanner.Domain.Core.WorkItemsTracking
         deposit.Value,
         pause.Value,
         new RegisteredTime(workItemList.DistributedTime, timePool.Value),
-        WorkItems
+        workItemList.WorkItems.ToList()
       );
     }
-
-    private List<WorkItem> WorkItems => workItemList.WorkItems;
 
     public static StatusBuilder CreateStatusBuilder(Status status)
     {
@@ -73,7 +71,10 @@ namespace TimePlanner.Domain.Core.WorkItemsTracking
       builder.pause.Increase(status.Pause);
       builder.UpdateTimePool(status.Deposit, status.Pause, status.RegisteredTime.Distributed);
 
-      builder.workItemList.ImportWorkItems(status.WorkItems);
+      foreach (var workItem in status.WorkItems)
+      {
+        builder.workItemList.AddWorkItem(workItem);
+      }
 
       return builder;
     }
@@ -103,7 +104,7 @@ namespace TimePlanner.Domain.Core.WorkItemsTracking
 
     public StatusBuilder CreateWorkItem(string workItemName)
     {
-      workItemList.AddWorkItem(workItemName);
+      workItemList.CreateWorkItem(workItemName);
       return this;
     }
 

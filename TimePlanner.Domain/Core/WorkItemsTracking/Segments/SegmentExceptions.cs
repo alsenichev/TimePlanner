@@ -18,12 +18,6 @@
   /// </summary>
   public class MissingSegmentException : ApplicationException
   {
-    public MissingSegmentException(int index)
-    {
-      Index = index;
-    }
-
-    public int Index { get; }
   }
 
 
