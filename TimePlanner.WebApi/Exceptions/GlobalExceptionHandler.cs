@@ -30,6 +30,7 @@ namespace TimePlanner.WebApi.Exceptions
       await httpContext.Response.WriteAsync(JsonSerializer.Serialize(
         new 
         {
+          Exception = exceptionType,
           ErrorMessage = message
         }));
     }

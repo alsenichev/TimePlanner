@@ -8,6 +8,9 @@ using TimePlanner.WebApi.Mappers;
 using TimePlanner.WebApi.Models.Requests;
 using TimePlanner.WebApi.Services;
 using TimePlanner.WebApi.Validators;
+using Microsoft.EntityFrameworkCore;
+using TimePlanner.DataAccess.Mappers;
+using TimePlanner.DataAccess.Repositories;
 
 var options = new WebApplicationOptions
 {
@@ -22,10 +25,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddFluentValidation();
-builder.Services.AddSingleton<IStatusRepository, StatusRepository>();
+builder.Services.AddScoped<IStatusRepository, StatusRepository>();
 builder.Services.AddScoped<IStatusService, StatusService>();
 builder.Services.AddScoped<IStatusMapper, StatusMapper>();
+builder.Services.AddScoped<IStatusEntityMapper, StatusEntityMapper>();
+builder.Services.AddScoped<IWorkItemEntityMapper, WorkItemEntityMapper>();
 builder.Services.AddScoped<IValidator<WorkItemRequest>, WorkItemRequestValidator>();
+builder.Services.AddDbContext<TimePlannerDbContext>(
+  options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Host.UseWindowsService();
 

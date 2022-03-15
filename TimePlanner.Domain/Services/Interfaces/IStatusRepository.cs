@@ -4,10 +4,12 @@ namespace TimePlanner.Domain.Services.Interfaces
 {
   public interface IStatusRepository
   {
-    Task<Status?> GetStatusAsync(DateOnly date);
+    Task<Status> GetStatusAsync(Guid statusId);
 
-    Task<Status?> GetPreviousStatusAsync(DateOnly date);
+    Task<List<Status>> GetStatusesAsync(int count);
 
-    Task SaveStatusAsync(Status status);
+    Task<Status> SaveStatusAsync(Status status);
+
+    Task DeleteWorkItemAsync(Guid statusId, Guid workItemId);
   }
 }

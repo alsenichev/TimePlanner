@@ -110,15 +110,17 @@
     /// <summary>
     /// Delete the segment and flush its time to the remaining.
     /// </summary>
-    public void RemoveSegmentAt(int segmentIndex)
+    public TimeSpanValue RemoveSegmentAt(int segmentIndex)
     {
       if (segmentIndex < 0 || segmentIndex >= segments.Count)
       {
         throw new MissingSegmentException(segmentIndex);
       }
 
-      remainingTime.Increase(segments[segmentIndex].Value);
+      TimeSpanValue result = segments[segmentIndex].Value;
+      remainingTime.Increase(result);
       segments.RemoveAt(segmentIndex);
+      return result;
     }
   }
 }

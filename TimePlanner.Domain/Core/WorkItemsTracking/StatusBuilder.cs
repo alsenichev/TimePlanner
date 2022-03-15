@@ -5,26 +5,32 @@ namespace TimePlanner.Domain.Core.WorkItemsTracking
 {
   public class StatusBuilder
   {
-    private readonly DateTime startedAt;
-    private readonly TimeSpanValue deposit;
     private readonly WorkItemList workItemList;
+    private readonly DaySegment deposit;
     private readonly DaySegment pause;
+    private readonly Guid? id;
 
+    private DateTime startedAt;
     private DaySegment timePool;
     private DateTime? breakStartedAt;
 
-    private StatusBuilder(TimeSpanValue deposit, DateTime startedAt)
+    private StatusBuilder(Guid? id, TimeSpanValue deposit, DateTime startedAt)
     {
       workItemList = new WorkItemList();
-      this.deposit = deposit;
+      this.id = id;
       this.startedAt = startedAt;
       this.timePool = DaySegment.Empty();
       this.pause = DaySegment.Empty();
+      this.deposit = new DaySegment(deposit);
     }
 
-    private void UpdateTimePool(DateTime dateTime)
+    private void UpdateTimePool(
+      TimeSpanValue depositUpdate,
+      TimeSpanValue pauseUpdate,
+      TimeSpanValue distributed)
     {
-      DateOnly requestedDate = DateOnly.FromDateTime(dateTime);
+      DateTime now = DateTime.Now;
+      DateOnly requestedDate = DateOnly.FromDateTime(now);
       DateOnly startedAtDate = DateOnly.FromDateTime(startedAt);
       if (!requestedDate.Equals(startedAtDate))
       {
@@ -32,52 +38,49 @@ namespace TimePlanner.Domain.Core.WorkItemsTracking
           $"Can not update status: the requested date {requestedDate} doesn't match the start date {startedAtDate}");
       }
 
-      TimeSpan result = dateTime - startedAt;
+      TimeSpan result = now - startedAt;
       if (result < TimeSpan.Zero)
       {
         throw new ApplicationException(
-          $"Can not update status: the requested time {dateTime} is less than the start time {startedAt}");
+          $"Can not update status: the requested time {now} is less than the start time {startedAt}");
       }
 
       timePool = new DaySegment(result);
+      timePool.Increase(depositUpdate);
+      timePool.Decrease(pauseUpdate);
+      timePool.Decrease(distributed);
     }
 
     public Status Build()
     {
       return new Status(
+        id,
         startedAt,
         breakStartedAt,
-        deposit,
+        deposit.Value,
         pause.Value,
         new RegisteredTime(workItemList.DistributedTime, timePool.Value),
         WorkItems
       );
     }
 
-    private List<WorkItem> WorkItems => workItemList.GetWorkItems();
+    private List<WorkItem> WorkItems => workItemList.WorkItems;
 
-    public static StatusBuilder CreateStatusBuilder(Status status, DateTime dateTime)
+    public static StatusBuilder CreateStatusBuilder(Status status)
     {
-      var builder = new StatusBuilder(status.Deposit, status.StartedAt);
+      var builder = new StatusBuilder(status.Id.Value, status.Deposit, status.StartedAt);
       builder.breakStartedAt = status.BreakStartedAt;
       builder.pause.Increase(status.Pause);
-      builder.UpdateTimePool(dateTime);
-      builder.timePool.Increase(status.Deposit);
-      builder.timePool.Decrease(status.Pause);
+      builder.UpdateTimePool(status.Deposit, status.Pause, status.RegisteredTime.Distributed);
 
-      for (var i = 0; i < status.WorkItems.Count; i++)
-      {
-        WorkItem workItem = status.WorkItems[i];
-        builder.AddWorkItem(workItem.Name);
-        builder.DistributeWorkingTime(i, workItem.Duration.Duration);
-      }
+      builder.workItemList.ImportWorkItems(status.WorkItems);
 
       return builder;
     }
 
-    public static StatusBuilder Of(TimeSpanValue deposit, DateTime startedAt)
+    public static StatusBuilder Of(TimeSpanValue deposit)
     {
-      var builder = new StatusBuilder(deposit, startedAt);
+      var builder = new StatusBuilder(null, deposit, DateTime.Now);
       builder.timePool.Increase(deposit);
       return builder;
     }
@@ -98,40 +101,42 @@ namespace TimePlanner.Domain.Core.WorkItemsTracking
       return this;
     }
 
-    public StatusBuilder AddWorkItem(string workItemName)
+    public StatusBuilder CreateWorkItem(string workItemName)
     {
       workItemList.AddWorkItem(workItemName);
       return this;
     }
 
-    public StatusBuilder DistributeWorkingTime(int workItemIndex, TimeSpan duration)
+    public StatusBuilder DistributeWorkingTime(Guid workItemId, TimeSpan duration)
     {
       if (duration > TimeSpan.Zero)
       {
         timePool.Decrease(duration);
-        workItemList.AddToDuration(workItemIndex, duration);
+        workItemList.AddToDuration(workItemId, duration);
       }
       else
       {
-        workItemList.RemoveFromDuration(workItemIndex, duration.Duration());
+        workItemList.RemoveFromDuration(workItemId, duration.Duration());
         timePool.Increase(duration.Duration());
       }
       return this;
     }
 
-    public StatusBuilder StartBreak(DateTime dateTime)
+    public StatusBuilder StartBreak()
     {
-      breakStartedAt = dateTime;
+      breakStartedAt = DateTime.Now;
       return this;
     }
 
-    public StatusBuilder EndBreak(DateTime dateTime)
+    public StatusBuilder EndBreak()
     {
       if (!breakStartedAt.HasValue)
       {
         return this;
       }
-      DateOnly requestedDate = DateOnly.FromDateTime(dateTime);
+
+      DateTime now = DateTime.Now;
+      DateOnly requestedDate = DateOnly.FromDateTime(now);
       DateOnly breakAtDate = DateOnly.FromDateTime(breakStartedAt.Value);
       if (!requestedDate.Equals(breakAtDate))
       {
@@ -139,11 +144,11 @@ namespace TimePlanner.Domain.Core.WorkItemsTracking
           $"Can not end break: the requested date {requestedDate} doesn't match the break start date {breakAtDate}");
       }
 
-      TimeSpan breakTime = dateTime - breakStartedAt.Value;
+      TimeSpan breakTime = now - breakStartedAt.Value;
       if (breakTime < TimeSpan.Zero)
       {
-        throw new ApplicationException(
-          $"Can not end break: the requested time {dateTime} is less than the break start time {breakStartedAt}");
+        throw new InvalidOperationException(
+          $"Can not end break: the requested time {now} is less than the break start time {breakStartedAt}");
       }
 
       RegisterPause(breakTime);
@@ -154,6 +159,14 @@ namespace TimePlanner.Domain.Core.WorkItemsTracking
     public StatusBuilder CancelBreak()
     {
       breakStartedAt = null;
+      return this;
+    }
+
+    public StatusBuilder FixStartTime(TimeOnly startTime)
+    {
+      startedAt = new DateTime(startedAt.Year, startedAt.Month, startedAt.Day, startTime.Hour, startTime.Minute,
+        startTime.Second);
+      UpdateTimePool(deposit.Value, pause.Value, workItemList.DistributedTime);
       return this;
     }
   }

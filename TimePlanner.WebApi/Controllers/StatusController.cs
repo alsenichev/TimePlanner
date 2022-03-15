@@ -8,7 +8,7 @@ using TimePlanner.WebApi.Services;
 namespace TimePlanner.WebApi.Controllers
 {
   [ApiController]
-  [Route("[controller]")]
+  [Route("statuses")]
   public class StatusController : ControllerBase
   {
     private readonly IStatusService statusService;
@@ -22,15 +22,24 @@ namespace TimePlanner.WebApi.Controllers
       this.statusMapper = statusMapper;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<Status>> GetStatus()
+    [HttpGet("{count}")]
+    public async Task<ActionResult<List<Status>>> GetStatus(
+      [FromRoute] int count)
     {
-      var status = await statusService.GetStatusAsync(DateTime.Now);
+      List<Status> statuses = await statusService.GetStatuses(count);
+      return Ok(statuses.Select(s => statusMapper.Map(s)));
+    }
+
+    [HttpGet("current")]
+    public async Task<ActionResult<Status>> GetCurrentStatus()
+    {
+      Status status = await statusService.GetCurrentStatusAsync();
       return Ok(statusMapper.Map(status));
     }
 
-    [HttpPost("workItems")]
+    [HttpPost("{statusId}/workItems")]
     public async Task<ActionResult<Status>> AddWorkItem(
+      [FromRoute] Guid statusId,
       [FromBody] WorkItemRequest request,
       [FromServices] IValidator<WorkItemRequest> validator)
     {
@@ -40,46 +49,66 @@ namespace TimePlanner.WebApi.Controllers
         return BadRequest(string.Join(Environment.NewLine, validationResult.Errors));
       }
 
-      Status status = await statusService.AddWorkItemAsync(DateTime.Now, request.Name);
+      Status status = await statusService.AddWorkItemAsync(statusId, request.Name);
       return Ok(statusMapper.Map(status));
     }
 
-    [HttpPost("workItems/{workItemIndex}/time/{duration}")]
+    [HttpDelete("{statusId}/workItems/{workItemId}")]
+    public async Task<ActionResult> DeleteWorkItem(
+      [FromRoute] Guid statusId,
+      [FromRoute] Guid workItemId)
+    {
+      Status status = await statusService.DeleteWorkItemAsync(statusId, workItemId);
+      return Ok(statusMapper.Map(status));
+    }
+
+    [HttpPost("{statusId}/workItems/{workItemId}/time/{duration}")]
     public async Task<ActionResult<Status>> DistributeWorkingTime(
-      [FromRoute] int workItemIndex,
+      [FromRoute] Guid statusId,
+      [FromRoute] Guid workItemId,
       [FromRoute] TimeSpan duration)
     {
       Status status = await statusService.DistributeWorkingTimeAsync(
-        DateTime.Now, workItemIndex, duration);
+        statusId, workItemId, duration);
       return Ok(statusMapper.Map(status));
     }
 
-    [HttpPost("pause/{duration}")]
+    [HttpPost("{statusId}/pause/{duration}")]
     public async Task<ActionResult<Status>> SetPause(
+      [FromRoute] Guid statusId,
       [FromRoute] TimeSpan duration)
     {
-      Status status = await statusService.SetPause(DateTime.Now, duration);
+      Status status = await statusService.SetPause(statusId, duration);
       return Ok(statusMapper.Map(status));
     }
 
-    [HttpPost("break/start")]
-    public async Task<ActionResult<Status>> StartBreak()
+    [HttpPost("{statusId}/break/start")]
+    public async Task<ActionResult<Status>> StartBreak([FromRoute] Guid statusId)
     {
-      Status status = await statusService.StartBreak(DateTime.Now);
+      Status status = await statusService.StartBreak(statusId);
       return Ok(statusMapper.Map(status));
     }
 
-    [HttpPost("break/end")]
-    public async Task<ActionResult<Status>> EndBreak()
+    [HttpPost("{statusId}/break/end")]
+    public async Task<ActionResult<Status>> EndBreak([FromRoute] Guid statusId)
     {
-      Status status = await statusService.EndBreak(DateTime.Now);
+      Status status = await statusService.EndBreak(statusId);
       return Ok(statusMapper.Map(status));
     }
 
-    [HttpPost("break/cancel")]
-    public async Task<ActionResult<Status>> CancelBreak()
+    [HttpPost("{statusId}/break/cancel")]
+    public async Task<ActionResult<Status>> CancelBreak([FromRoute] Guid statusId)
     {
-      Status status = await statusService.CancelBreak(DateTime.Now);
+      Status status = await statusService.CancelBreak(statusId);
+      return Ok(statusMapper.Map(status));
+    }
+
+    [HttpPost("{statusId}/startTime/{startTime}")]
+    public async Task<ActionResult<Status>> FixStartTime(
+      [FromRoute] Guid statusId,
+      [FromRoute] TimeSpan startTime)
+    {
+      Status status = await statusService.FixStartTime(statusId, TimeOnly.FromTimeSpan(startTime));
       return Ok(statusMapper.Map(status));
     }
   }

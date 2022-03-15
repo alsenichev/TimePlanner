@@ -8,6 +8,7 @@ internal class StatusMapper : IStatusMapper
   public StatusResponse Map(Status status)
   {
     return new StatusResponse(
+      status.Id.Value,
       status.StartedAt,
       status.BreakStartedAt,
       status.Deposit.Duration,
@@ -16,6 +17,6 @@ internal class StatusMapper : IStatusMapper
         status.RegisteredTime.Distributed.Duration,
         status.RegisteredTime.Undistributed.Duration),
       status.WorkItems.Select(
-        i => new WorkItemResponse(i.Name, i.Duration.Duration)).ToList());
+        i => new WorkItemResponse(i.Id.Value, i.Name, i.Duration.Duration)).ToList());
   }
 }

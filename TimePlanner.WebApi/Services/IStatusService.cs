@@ -4,17 +4,23 @@ namespace TimePlanner.WebApi.Services;
 
 public interface IStatusService
 {
-  Task<Status> GetStatusAsync(DateTime dateTime);
+  Task<List<Status>> GetStatuses(int count);
 
-  Task<Status> AddWorkItemAsync(DateTime dateTime, string requestName);
+  Task<Status> GetCurrentStatusAsync();
 
-  Task<Status> DistributeWorkingTimeAsync(DateTime dateTime, int workItemIndex, TimeSpan duration);
+  Task<Status> AddWorkItemAsync(Guid statusId, string requestName);
 
-  Task<Status> SetPause(DateTime dateTime, TimeSpan duration);
+  Task<Status> DistributeWorkingTimeAsync(Guid statusId, Guid workItemId, TimeSpan duration);
 
-  Task<Status> StartBreak(DateTime dateTime);
+  Task<Status> SetPause(Guid statusId, TimeSpan duration);
 
-  Task<Status> EndBreak(DateTime dateTime);
+  Task<Status> StartBreak(Guid statusId);
 
-  Task<Status> CancelBreak(DateTime dateTime);
+  Task<Status> EndBreak(Guid statusId);
+
+  Task<Status> CancelBreak(Guid statusId);
+
+  Task<Status> DeleteWorkItemAsync(Guid statusId, Guid workItemId);
+
+  Task<Status> FixStartTime(Guid statusId, TimeOnly startTime);
 }

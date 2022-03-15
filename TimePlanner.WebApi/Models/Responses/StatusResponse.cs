@@ -1,6 +1,7 @@
 ﻿namespace TimePlanner.WebApi.Models.Responses
 {
   public record struct StatusResponse(
+    Guid Id,
     DateTime StartedAt,
     DateTime? BreakStartedAt,
     TimeSpan Deposit,
@@ -13,5 +14,5 @@
     public TimeSpan Total => Distributed + Undistributed;
   }
 
-  public record struct WorkItemResponse(string Name, TimeSpan Duration);
+  public record struct WorkItemResponse(Guid Id, string Name, TimeSpan Duration);
 }

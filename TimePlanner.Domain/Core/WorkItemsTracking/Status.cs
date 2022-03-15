@@ -4,6 +4,7 @@ using TimePlanner.Domain.Core.WorkItemsTracking.WorkItems;
 namespace TimePlanner.Domain.Core.WorkItemsTracking
 {
   public record struct Status(
+    Guid? Id,
     DateTime StartedAt,
     DateTime? BreakStartedAt,
     TimeSpanValue Deposit,

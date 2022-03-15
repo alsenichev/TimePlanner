@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using TimePlanner.Domain.Core.WorkItemsTracking;
 using TimePlanner.Domain.Core.WorkItemsTracking.Segments;
+using TimePlanner.Domain.Exceptions;
 using TimePlanner.Domain.Services.Interfaces;
 using TimePlanner.WebApi.Exceptions;
 
@@ -11,30 +12,13 @@ namespace TimePlanner.WebApi.Services
     private readonly IStatusRepository statusRepository;
     private readonly ILogger<StatusService> logger;
 
-    private async Task<Status> CreateStatusIfNotExists(Status? status, DateTime dateTime)
+    private Status CreateStatus(Status? previous)
     {
-      if (status.HasValue)
-      {
-        return status.Value;
-      }
-
-      Status? prev;
-      try
-      {
-        prev = await statusRepository.GetPreviousStatusAsync(DateOnly.FromDateTime(dateTime));
-      }
-      catch (DataAccessException)
-      {
-        throw new ApiException(
-          "Failed to read previous status.",
-          HttpStatusCode.InternalServerError);
-      }
-
-      var deposit = prev.HasValue ? prev.Value.Deposit : TimeSpan.Zero;
+      var deposit = previous?.Deposit ?? TimeSpan.Zero;
       StatusBuilder statusBuilder;
       try
       {
-        statusBuilder = StatusBuilder.Of(deposit, dateTime);
+        statusBuilder = StatusBuilder.Of(deposit);
       }
       catch (SegmentOverflowException)
       {
@@ -46,11 +30,11 @@ namespace TimePlanner.WebApi.Services
       return statusBuilder.Build();
     }
 
-    private async Task SaveStatusAsync(Status newStatus)
+    private async Task<Status> SaveStatusAsync(Status status)
     {
       try
       {
-        await statusRepository.SaveStatusAsync(newStatus);
+        return await statusRepository.SaveStatusAsync(status);
       }
       catch (DataAccessException e)
       {
@@ -58,16 +42,19 @@ namespace TimePlanner.WebApi.Services
 
         throw new ApiException("Failed to save changes.", HttpStatusCode.InternalServerError);
       }
+      catch (EntityMissingException)
+      {
+        logger.LogError("Failed to save status {status}", status);
+
+        throw new ApiException("Failed to save changes.", HttpStatusCode.InternalServerError);
+      }
     }
 
-    private async Task<Status> GetExistingStatusAsync(DateTime dateTime)
+    private async Task<Status> GetExistingStatusAsync(Guid statusId)
     {
-      var dateOnly = DateOnly.FromDateTime(dateTime);
-      Status? maybeStatus;
-
       try
       {
-        maybeStatus = await statusRepository.GetStatusAsync(dateOnly);
+        return await statusRepository.GetStatusAsync(statusId);
       }
       catch (DataAccessException e)
       {
@@ -77,22 +64,19 @@ namespace TimePlanner.WebApi.Services
           "Failed to read the existing status from the database.",
           HttpStatusCode.InternalServerError);
       }
-
-      if (!maybeStatus.HasValue)
+      catch (EntityMissingException)
       {
         throw new ApiException(
-          $"Status for {dateOnly} does not exist. Use GET/status endpoint to create one.",
+          $"Status with id {statusId} does not exist.",
           HttpStatusCode.BadRequest);
       }
-
-      return maybeStatus.Value;
     }
 
-    private StatusBuilder CreateStatusBuilder(Status status, DateTime dateTime)
+    private StatusBuilder CreateStatusBuilder(Status status)
     {
       try
       {
-        return StatusBuilder.CreateStatusBuilder(status, dateTime);
+        return StatusBuilder.CreateStatusBuilder(status);
       }
       catch (SegmentOverflowException)
       {
@@ -108,14 +92,14 @@ namespace TimePlanner.WebApi.Services
       this.logger = logger;
     }
 
-    public async Task<Status> GetStatusAsync(DateTime dateTime)
+    public async Task<Status> GetCurrentStatusAsync()
     {
-      var dateOnly = DateOnly.FromDateTime(dateTime);
-      Status? maybeStatus;
+      Status? latestStatus;
 
       try
       {
-        maybeStatus = await statusRepository.GetStatusAsync(dateOnly);
+        var list = await statusRepository.GetStatusesAsync(1);
+        latestStatus = list.Count == 1 ? list[0] : null;
       }
       catch (DataAccessException e)
       {
@@ -127,54 +111,57 @@ namespace TimePlanner.WebApi.Services
       }
 
       Status status;
-      if (maybeStatus.HasValue)
+      if (latestStatus.HasValue && latestStatus.Value.StartedAt.Date.Equals(DateTime.Now.Date))
       {
-        status = CreateStatusBuilder(maybeStatus.Value, dateTime).Build();
+        status = CreateStatusBuilder(latestStatus.Value).Build();
       }
       else
       {
-        status = await CreateStatusIfNotExists(maybeStatus, dateTime);
+        status = CreateStatus(latestStatus);
       }
 
-      await SaveStatusAsync(status);
-      return status;
+      return await SaveStatusAsync(status);
     }
 
-    public async Task<Status> AddWorkItemAsync(DateTime dateTime, string workItemName)
+    public Task<List<Status>> GetStatuses(int count)
     {
-      var existingStatus = await GetExistingStatusAsync(dateTime);
+      return statusRepository.GetStatusesAsync(count);
+    }
+
+    public async Task<Status> AddWorkItemAsync(Guid statusId, string workItemName)
+    {
+      Status existingStatus = await GetExistingStatusAsync(statusId);
       Status updatedStatus;
       try
       {
-        updatedStatus = CreateStatusBuilder(existingStatus, dateTime)
-          .AddWorkItem(workItemName)
+        updatedStatus = CreateStatusBuilder(existingStatus)
+          .CreateWorkItem(workItemName)
           .Build();
       }
       catch (SegmentOverflowException)
       {
         throw new ApiException(
-          "Too many work items this day.Can't add more.",
+          "Too many work items this day. Can't add more.",
           HttpStatusCode.BadRequest);
       }
 
-      await SaveStatusAsync(updatedStatus);
-      return updatedStatus;
+      return await SaveStatusAsync(updatedStatus);
     }
 
-    public async Task<Status> DistributeWorkingTimeAsync(DateTime dateTime, int workItemIndex, TimeSpan duration)
+    public async Task<Status> DistributeWorkingTimeAsync(Guid statusId, Guid workItemId, TimeSpan duration)
     {
-      var existingStatus = await GetExistingStatusAsync(dateTime);
+      Status existingStatus = await GetExistingStatusAsync(statusId);
       Status updatedStatus;
       try
       {
-        updatedStatus = CreateStatusBuilder(existingStatus, dateTime)
-          .DistributeWorkingTime(workItemIndex, duration)
+        updatedStatus = CreateStatusBuilder(existingStatus)
+          .DistributeWorkingTime(workItemId, duration)
           .Build();
       }
       catch (MissingSegmentException)
       {
         throw new ApiException(
-          $"WorkItem with the index {workItemIndex} doesn't exist.",
+          $"WorkItem with the id {workItemId} doesn't exist.",
           HttpStatusCode.BadRequest);
       }
       catch (SegmentOverflowException e)
@@ -184,17 +171,16 @@ namespace TimePlanner.WebApi.Services
           HttpStatusCode.BadRequest);
       }
 
-      await SaveStatusAsync(updatedStatus);
-      return updatedStatus;
+      return await SaveStatusAsync(updatedStatus);
     }
 
-    public async Task<Status> SetPause(DateTime dateTime, TimeSpan duration)
+    public async Task<Status> SetPause(Guid statusId, TimeSpan duration)
     {
-      var existingStatus = await GetExistingStatusAsync(dateTime);
+      Status existingStatus = await GetExistingStatusAsync(statusId);
       Status updatedStatus;
       try
       {
-        updatedStatus = CreateStatusBuilder(existingStatus, dateTime)
+        updatedStatus = CreateStatusBuilder(existingStatus)
           .RegisterPause(duration)
           .Build();
       }
@@ -204,48 +190,83 @@ namespace TimePlanner.WebApi.Services
           $"The maximum possible value is {e.AcceptableValue.Duration}.",
           HttpStatusCode.BadRequest);
       }
-      await SaveStatusAsync(updatedStatus);
-      return updatedStatus;
+
+      return await SaveStatusAsync(updatedStatus);
     }
 
-    public async Task<Status> StartBreak(DateTime dateTime)
+    public async Task<Status> StartBreak(Guid statusId)
     {
-      var existingStatus = await GetExistingStatusAsync(dateTime);
+      Status existingStatus = await GetExistingStatusAsync(statusId);
       Status updatedStatus;
-      updatedStatus = CreateStatusBuilder(existingStatus, dateTime)
-        .StartBreak(dateTime)
+      updatedStatus = CreateStatusBuilder(existingStatus)
+        .StartBreak()
         .Build();
-      await SaveStatusAsync(updatedStatus);
-      return updatedStatus;
+      return await SaveStatusAsync(updatedStatus);
     }
 
-    public async Task<Status> EndBreak(DateTime dateTime)
+    public async Task<Status> EndBreak(Guid statusId)
     {
-      var existingStatus = await GetExistingStatusAsync(dateTime);
+      Status existingStatus = await GetExistingStatusAsync(statusId);
       Status updatedStatus;
       try
       {
-        updatedStatus = CreateStatusBuilder(existingStatus, dateTime)
-          .EndBreak(dateTime)
+        updatedStatus = CreateStatusBuilder(existingStatus)
+          .EndBreak()
           .Build();
       }
       catch (StatusBuilderException e)
       {
         throw new ApiException(e.Message, HttpStatusCode.BadRequest);
       }
-      await SaveStatusAsync(updatedStatus);
-      return updatedStatus;
+
+      return await SaveStatusAsync(updatedStatus);
     }
 
-    public async Task<Status> CancelBreak(DateTime dateTime)
+    public async Task<Status> CancelBreak(Guid statusId)
     {
-      var existingStatus = await GetExistingStatusAsync(dateTime);
-      Status updatedStatus;
-      updatedStatus = CreateStatusBuilder(existingStatus, dateTime)
+      Status existingStatus = await GetExistingStatusAsync(statusId);
+      Status updatedStatus = CreateStatusBuilder(existingStatus)
         .CancelBreak()
         .Build();
-      await SaveStatusAsync(updatedStatus);
-      return updatedStatus;
+      return await SaveStatusAsync(updatedStatus);
+    }
+
+    public async Task<Status> DeleteWorkItemAsync(Guid statusId, Guid workItemId)
+    {
+      Status beforeDeletion = await GetExistingStatusAsync(statusId);
+      if (!beforeDeletion.WorkItems.Any(i => i.Id.Value.Equals(workItemId)))
+      {
+        throw new ApiException($"Work item with id {workItemId} does not exist.", HttpStatusCode.BadRequest);
+      }
+      try
+      {
+        await statusRepository.DeleteWorkItemAsync(statusId, workItemId);
+      }
+      catch (DataAccessException)
+      {
+        throw new ApiException($"Failed to delete workItem with id {workItemId}", HttpStatusCode.InternalServerError);
+      }
+      Status afterDeletion = await GetExistingStatusAsync(statusId);
+      Status updatedStatus = CreateStatusBuilder(afterDeletion).Build();
+      return await SaveStatusAsync(updatedStatus);
+    }
+
+    public async Task<Status> FixStartTime(Guid statusId, TimeOnly startTime)
+    {
+      Status existingStatus = await GetExistingStatusAsync(statusId);
+      var builder = CreateStatusBuilder(existingStatus);
+      try
+      {
+        builder.FixStartTime(startTime);
+      }
+      catch (SegmentOverflowException e)
+      {
+        throw new ApiException(
+          $"Some of the time values of the status are out of the acceptable range: {e.AcceptableValue.Duration}.",
+          HttpStatusCode.BadRequest);
+      }
+      Status updatedStatus = builder.Build();
+      return await SaveStatusAsync(updatedStatus);
     }
   }
 }
