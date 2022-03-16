@@ -6,6 +6,7 @@ export interface WorkingTime{
   total: string
 }
 export interface Status {
+  id: string,
   startedAt: string;
   breakStartedAt: string,
   deposit: string;

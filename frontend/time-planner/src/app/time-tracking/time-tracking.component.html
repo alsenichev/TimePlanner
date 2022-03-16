@@ -6,6 +6,7 @@
 <div><span>undistributedTime: </span>{{status.workingTime.undistributed}}</div>
 <div><span>distributedTime:</span>{{status.workingTime.distributed}}</div>
 <div><span>totalTime: </span>{{status.workingTime.total}}</div>
+<button (click)="onAddNewWorkItem()">Create Work Item</button>
 <ul>
   <li *ngFor="let workItem of status.workItems">
     <span>{{workItem.name}}</span> {{workItem.duration}}
@@ -13,7 +14,6 @@
   </li>
 </ul>
 <div *ngIf="selectedWorkItem">
-
   <h2>{{selectedWorkItem.name | uppercase}}</h2>
   <div>
     <label for="work-item-name">Name: </label>
@@ -23,5 +23,5 @@
     <label for="work-item-duration">Duration: </label>
     <input id="work-item-duration" [(ngModel)]="selectedWorkItem.duration" placeholder="duration">
   </div>
-
+  <button (click)="onSubmitCurrentWorkItem()">Submit</button>
 </div>
