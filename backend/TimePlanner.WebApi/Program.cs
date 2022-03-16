@@ -32,7 +32,7 @@ builder.Services.AddScoped<IStatusEntityMapper, StatusEntityMapper>();
 builder.Services.AddScoped<IWorkItemEntityMapper, WorkItemEntityMapper>();
 builder.Services.AddScoped<IValidator<WorkItemRequest>, WorkItemRequestValidator>();
 builder.Services.AddDbContext<TimePlannerDbContext>(
-  options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+  o => o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Host.UseWindowsService();
 
@@ -43,9 +43,13 @@ if (app.Environment.IsDevelopment())
   app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseCors(x => x
+  .AllowAnyOrigin()
+  .AllowAnyMethod()
+  .AllowAnyHeader());
 
 app.UseAuthorization();
+app.UseStaticFiles();
 
 app.MapControllers();
 

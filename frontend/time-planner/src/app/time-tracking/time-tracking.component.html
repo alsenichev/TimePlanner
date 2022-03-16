@@ -1,0 +1,27 @@
+<h2>Current status</h2>
+<div><span>startedAt: </span>{{status.startedAt}}</div>
+<div><span>breakStartedAt: </span>{{status.breakStartedAt}}</div>
+<div><span>deposit: </span>{{status.deposit}}</div>
+<div><span>pause: </span>{{status.pause}}</div>
+<div><span>undistributedTime: </span>{{status.workingTime.undistributed}}</div>
+<div><span>distributedTime:</span>{{status.workingTime.distributed}}</div>
+<div><span>totalTime: </span>{{status.workingTime.total}}</div>
+<ul>
+  <li *ngFor="let workItem of status.workItems">
+    <span>{{workItem.name}}</span> {{workItem.duration}}
+    <button [class.selected]="workItem === selectedWorkItem" (click)="onSelected(workItem)">  Edit  </button>
+  </li>
+</ul>
+<div *ngIf="selectedWorkItem">
+
+  <h2>{{selectedWorkItem.name | uppercase}}</h2>
+  <div>
+    <label for="work-item-name">Name: </label>
+    <input id="work-item-name" [(ngModel)]="selectedWorkItem.name" placeholder="name">
+  </div>
+  <div>
+    <label for="work-item-duration">Duration: </label>
+    <input id="work-item-duration" [(ngModel)]="selectedWorkItem.duration" placeholder="duration">
+  </div>
+
+</div>
