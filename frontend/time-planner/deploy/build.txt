@@ -1,1 +1,1 @@
-.
+ng build --watch --output-path ../../backend/publish/wwwroot
