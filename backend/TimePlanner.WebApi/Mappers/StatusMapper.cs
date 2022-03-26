@@ -1,9 +1,9 @@
-﻿using TimePlanner.Domain.Core.WorkItemsTracking;
+﻿using TimePlanner.Domain.Models;
 using TimePlanner.WebApi.Models.Responses;
 
 namespace TimePlanner.WebApi.Mappers;
 
-internal class StatusMapper : IStatusMapper
+internal class StatusMapper : IStatusResponseMapper
 {
   public StatusResponse Map(Status status)
   {
@@ -13,10 +13,6 @@ internal class StatusMapper : IStatusMapper
       status.BreakStartedAt,
       status.Deposit.Duration,
       status.Pause.Duration,
-      new WorkingTimeResponse(
-        status.RegisteredTime.Distributed.Duration,
-        status.RegisteredTime.Undistributed.Duration),
-      status.WorkItems.Select(
-        i => new WorkItemResponse(i.Id.Value, i.Name, i.Duration.Duration)).ToList());
+      status.UndistributedTime.Duration);
   }
 }

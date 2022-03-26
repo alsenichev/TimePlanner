@@ -15,5 +15,14 @@ namespace TimePlanner.DataAccess
 
     public DbSet<StatusEntity> StatusEntities { get; set; }
     public DbSet<WorkItemEntity> WorkItemEntities { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+      modelBuilder.Entity<WorkItemEntity>()
+        .HasMany(w => w.Durations)
+        .WithOne()
+        .HasForeignKey(e => e.WorkItemId)
+        .OnDelete(DeleteBehavior.Cascade);
+    }
   }
 }

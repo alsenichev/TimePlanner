@@ -1,5 +1,5 @@
 ﻿using TimePlanner.DataAccess.Entities;
-using TimePlanner.Domain.Core.WorkItemsTracking;
+using TimePlanner.Domain.Models;
 
 namespace TimePlanner.DataAccess.Mappers
 {

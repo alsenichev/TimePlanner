@@ -2,7 +2,6 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using TimePlanner.DataAccess;
-using TimePlanner.Domain.Services.Interfaces;
 using TimePlanner.WebApi.Exceptions;
 using TimePlanner.WebApi.Mappers;
 using TimePlanner.WebApi.Models.Requests;
@@ -11,6 +10,7 @@ using TimePlanner.WebApi.Validators;
 using Microsoft.EntityFrameworkCore;
 using TimePlanner.DataAccess.Mappers;
 using TimePlanner.DataAccess.Repositories;
+using TimePlanner.Domain.Interfaces;
 
 var options = new WebApplicationOptions
 {
@@ -26,11 +26,15 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddFluentValidation();
 builder.Services.AddScoped<IStatusRepository, StatusRepository>();
+builder.Services.AddScoped<IWorkItemRepository, WorkItemRepository>();
 builder.Services.AddScoped<IStatusService, StatusService>();
-builder.Services.AddScoped<IStatusMapper, StatusMapper>();
+builder.Services.AddScoped<IWorkItemService, WorkItemService>();
+builder.Services.AddScoped<IStatusResponseMapper, StatusMapper>();
+builder.Services.AddScoped<IWorkItemResponseMapper, WorkItemResponseMapper>();
 builder.Services.AddScoped<IStatusEntityMapper, StatusEntityMapper>();
 builder.Services.AddScoped<IWorkItemEntityMapper, WorkItemEntityMapper>();
-builder.Services.AddScoped<IValidator<WorkItemRequest>, WorkItemRequestValidator>();
+builder.Services.AddScoped<IValidator<CreateWorkItemRequest>, WorkItemCreateRequestValidator>();
+builder.Services.AddScoped<IValidator<UpdateWorkItemRequest>, WorkItemUpdateRequestValidator>();
 builder.Services.AddDbContext<TimePlannerDbContext>(
   o => o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 

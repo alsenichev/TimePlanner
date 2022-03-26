@@ -1,8 +1,8 @@
 ﻿using System.Net;
-using TimePlanner.Domain.Core.WorkItemsTracking;
-using TimePlanner.Domain.Core.WorkItemsTracking.Segments;
 using TimePlanner.Domain.Exceptions;
-using TimePlanner.Domain.Services.Interfaces;
+using TimePlanner.Domain.Interfaces;
+using TimePlanner.Domain.Models;
+using TimePlanner.Domain.Services;
 using TimePlanner.WebApi.Exceptions;
 
 namespace TimePlanner.WebApi.Services
@@ -128,52 +128,6 @@ namespace TimePlanner.WebApi.Services
       return statusRepository.GetStatusesAsync(count);
     }
 
-    public async Task<Status> AddWorkItemAsync(Guid statusId, string workItemName)
-    {
-      Status existingStatus = await GetExistingStatusAsync(statusId);
-      Status updatedStatus;
-      try
-      {
-        updatedStatus = CreateStatusBuilder(existingStatus)
-          .CreateWorkItem(workItemName)
-          .Build();
-      }
-      catch (SegmentOverflowException)
-      {
-        throw new ApiException(
-          "Too many work items this day. Can't add more.",
-          HttpStatusCode.BadRequest);
-      }
-
-      return await SaveStatusAsync(updatedStatus);
-    }
-
-    public async Task<Status> DistributeWorkingTimeAsync(Guid statusId, Guid workItemId, TimeSpan duration)
-    {
-      Status existingStatus = await GetExistingStatusAsync(statusId);
-      Status updatedStatus;
-      try
-      {
-        updatedStatus = CreateStatusBuilder(existingStatus)
-          .DistributeWorkingTime(workItemId, duration)
-          .Build();
-      }
-      catch (MissingSegmentException)
-      {
-        throw new ApiException(
-          $"WorkItem with the id {workItemId} doesn't exist.",
-          HttpStatusCode.BadRequest);
-      }
-      catch (SegmentOverflowException e)
-      {
-        throw new ApiException(
-          $"The maximum possible value is {e.AcceptableValue.Duration}.",
-          HttpStatusCode.BadRequest);
-      }
-
-      return await SaveStatusAsync(updatedStatus);
-    }
-
     public async Task<Status> SetPause(Guid statusId, TimeSpan duration)
     {
       Status existingStatus = await GetExistingStatusAsync(statusId);
@@ -228,26 +182,6 @@ namespace TimePlanner.WebApi.Services
       Status updatedStatus = CreateStatusBuilder(existingStatus)
         .CancelBreak()
         .Build();
-      return await SaveStatusAsync(updatedStatus);
-    }
-
-    public async Task<Status> DeleteWorkItemAsync(Guid statusId, Guid workItemId)
-    {
-      Status beforeDeletion = await GetExistingStatusAsync(statusId);
-      if (!beforeDeletion.WorkItems.Any(i => i.Id.Value.Equals(workItemId)))
-      {
-        throw new ApiException($"Work item with id {workItemId} does not exist.", HttpStatusCode.BadRequest);
-      }
-      try
-      {
-        await statusRepository.DeleteWorkItemAsync(statusId, workItemId);
-      }
-      catch (DataAccessException)
-      {
-        throw new ApiException($"Failed to delete workItem with id {workItemId}", HttpStatusCode.InternalServerError);
-      }
-      Status afterDeletion = await GetExistingStatusAsync(statusId);
-      Status updatedStatus = CreateStatusBuilder(afterDeletion).Build();
       return await SaveStatusAsync(updatedStatus);
     }
 

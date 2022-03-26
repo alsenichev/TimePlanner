@@ -2,9 +2,9 @@
 using Microsoft.Extensions.Logging;
 using TimePlanner.DataAccess.Entities;
 using TimePlanner.DataAccess.Mappers;
-using TimePlanner.Domain.Core.WorkItemsTracking;
 using TimePlanner.Domain.Exceptions;
-using TimePlanner.Domain.Services.Interfaces;
+using TimePlanner.Domain.Interfaces;
+using TimePlanner.Domain.Models;
 
 namespace TimePlanner.DataAccess.Repositories
 {
@@ -31,9 +31,8 @@ namespace TimePlanner.DataAccess.Repositories
       {
         entity = await dbContext
           .StatusEntities
-          .Include(s => s.WorkItems)
           .AsNoTracking()
-          .FirstOrDefaultAsync(s => s.StatusEntityId.Equals(statusId));
+          .FirstOrDefaultAsync(s => s.StatusId.Equals(statusId));
       }
       catch (Exception ex)
       {
@@ -54,7 +53,6 @@ namespace TimePlanner.DataAccess.Repositories
     {
       return dbContext
         .StatusEntities
-        .Include(s => s.WorkItems)
         .AsNoTracking()
         .OrderByDescending(s => s.StartedAt)
         .Take(count)
@@ -96,23 +94,6 @@ namespace TimePlanner.DataAccess.Repositories
       }
 
       return result[0];
-    }
-
-    public async Task DeleteWorkItemAsync(Guid statusId, Guid workItemId)
-    {
-      var entity = new WorkItemEntity { WorkItemEntityId = workItemId };
-      try
-      {
-        dbContext.Remove(entity);
-        await dbContext.SaveChangesAsync();
-      }
-      catch (Exception e)
-      {
-        logger.LogError(e, "Failed to delete the work item with id {workItemId}.", workItemId);
-
-        throw new DataAccessException();
-
-      }
     }
   }
 }

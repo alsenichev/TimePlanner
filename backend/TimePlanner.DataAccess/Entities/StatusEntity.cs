@@ -6,9 +6,8 @@ namespace TimePlanner.DataAccess.Entities
   [Table("Statuses")]
   public class StatusEntity
   {
-    [Column("StatusID")]
     [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public Guid StatusEntityId { get; set; }
+    public Guid StatusId { get; set; }
 
     public DateTime StartedAt { get; set; }
 
@@ -19,7 +18,5 @@ namespace TimePlanner.DataAccess.Entities
     public TimeSpan Pause { get; set; }
 
     public TimeSpan UndistributedTime { get; set; }
-
-    public List<WorkItemEntity>? WorkItems { get; set; }
   }
 }

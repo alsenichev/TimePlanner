@@ -3,6 +3,8 @@ import { MessageService } from '../messages/message.service';
 import { Status } from './models/status';
 import { WorkItem } from './models/work-item';
 import { TimeTrackingService } from './time-tracking.service';
+import { FormBuilder } from '@angular/forms';
+import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-time-tracking',
@@ -11,55 +13,94 @@ import { TimeTrackingService } from './time-tracking.service';
 })
 export class TimeTrackingComponent implements OnInit {
 
-  constructor(private timeTrackingService: TimeTrackingService, private messageService: MessageService) { }
-
+  constructor(
+    private timeTrackingService: TimeTrackingService,
+    private messageService: MessageService,
+    private fb: FormBuilder) { }
+  
+  active = 'today';
+  newWorkItemName?:string;
+  currentWorkItem?:WorkItem;
   status: Status;
-  selectedWorkItem? : WorkItem;
 
-  onSelected(workItem: WorkItem){
-    this.messageService.add(`StatusComponent: Selected work item: ${workItem.name}`);
-    this.selectedWorkItem = workItem;
+  workItems? : WorkItem[];
+  todayWorkItems? : WorkItem[];
+  tomorrowWorkItems? : WorkItem[];
+  nextWeekWorkItems? : WorkItem[];
+  someDayWorkItems? : WorkItem[];
+  completedWorkItems? : WorkItem[];
+
+   filterWorkItems(items: WorkItem[]){
+    this.todayWorkItems = items.filter(i => i.category == 'Today');
+    this.tomorrowWorkItems = items.filter(i => i.category == 'Tomorrow');
+    this.nextWeekWorkItems = items.filter(i => i.category == 'NextWeek');
+    this.completedWorkItems = items.filter(i => i.category == 'Completed');
+    this.completedWorkItems.sort((i,j)=> Date.parse(j.completedAt!) - Date.parse(i.completedAt!));
   }
 
-  onAddNewWorkItem(){
-    this.messageService.add(`Created new work item.`);
-    this.selectedWorkItem = {id: "", name: "New work item.", duration:"00:00:00" };
+  loadWorkItems(){
+    this.timeTrackingService.getWorkItems().subscribe(its => this.filterWorkItems(its));
   }
-
+  
   loadStatus(){
     this.timeTrackingService.getStatus().subscribe(s => {
-      console.log(s);
       this.status = s;
     })
   }
-  onSubmitCurrentWorkItem(){
-    if(this.selectedWorkItem?.id == "")
-    {
-      this.timeTrackingService.addWorkItem(this.status.id, this.selectedWorkItem).subscribe(
-        {
-          next: s =>{
-            this.status = s;
-            this.selectedWorkItem = undefined;
-            this.messageService.add("Successfully created the work item.");
-          },
-          error: e => this.messageService.add(e.message)
-        })
-    }
-    else{
-      this.timeTrackingService.editWorkItem(this.status.id, this.selectedWorkItem!).subscribe(
-        {
-          next: s =>{
-            this.status = s;
-            this.selectedWorkItem = undefined;
-            this.messageService.add("Successfully updated the work item.");
-          },
-          error: e => this.messageService.add(e.message)
-        })
+
+  createWorkItem(){
+    if(this.newWorkItemName!=undefined){
+      this.timeTrackingService.addWorkItem(this.newWorkItemName).subscribe(wi => {
+        this.loadWorkItems();
+        this.newWorkItemName = undefined;
+      });
     }
   }
 
+  onEditWorkItem(workItem:WorkItem){
+    this.currentWorkItem = workItem;
+  }
+
+  onWorkItemChanged(workItem: WorkItem){
+    this.timeTrackingService.updateWorkItem(workItem).subscribe(wi=>{
+      this.loadWorkItems();
+      this.currentWorkItem = undefined;
+    });
+  }
+
+  onWorkItemDeleted(workItem: WorkItem){
+    this.timeTrackingService.deleteWorkItem(workItem.id).subscribe(_ =>{
+      this.loadWorkItems();
+      this.currentWorkItem = undefined;
+      this.messageService.add(`Deleted work item: ${workItem.name}.`);
+    });
+  }
+
+  dropToday(event: CdkDragDrop<string[]>) {
+    this.reorderWorkItems(this.todayWorkItems!, event);
+  }
+
+  dropTomorrow(event: CdkDragDrop<string[]>) {
+    this.reorderWorkItems(this.tomorrowWorkItems!, event);
+  }
+
+  dropNextWeek(event: CdkDragDrop<string[]>) {
+    this.reorderWorkItems(this.nextWeekWorkItems!, event);
+  }
+
+  reorderWorkItems(source: WorkItem[], event: CdkDragDrop<string[]>){
+    let workItem: WorkItem = source[event.previousIndex];
+    let diff:number = event.currentIndex - event.previousIndex;
+    workItem.sortOrder += diff;
+    this.timeTrackingService.updateWorkItem(workItem).subscribe(wi=>{
+      this.loadWorkItems();
+    });
+  }
+
+
   ngOnInit(): void {
-    this.loadStatus()
+    //this.loadStatus();
+    this.loadWorkItems();
   }
 
 }

@@ -22,12 +22,35 @@ namespace TimePlanner.DataAccess.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
+            modelBuilder.Entity("TimePlanner.DataAccess.Entities.DurationEntity", b =>
+                {
+                    b.Property<int>("DurationEntityId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DurationEntityId"), 1L, 1);
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<TimeSpan>("Value")
+                        .HasColumnType("time");
+
+                    b.Property<Guid>("WorkItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("DurationEntityId");
+
+                    b.HasIndex("WorkItemId");
+
+                    b.ToTable("Durations");
+                });
+
             modelBuilder.Entity("TimePlanner.DataAccess.Entities.StatusEntity", b =>
                 {
-                    b.Property<Guid>("StatusEntityId")
+                    b.Property<Guid>("StatusId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("StatusID");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("BreakStartedAt")
                         .HasColumnType("datetime2");
@@ -44,45 +67,60 @@ namespace TimePlanner.DataAccess.Migrations
                     b.Property<TimeSpan>("UndistributedTime")
                         .HasColumnType("time");
 
-                    b.HasKey("StatusEntityId");
+                    b.HasKey("StatusId");
 
                     b.ToTable("Statuses");
                 });
 
             modelBuilder.Entity("TimePlanner.DataAccess.Entities.WorkItemEntity", b =>
                 {
-                    b.Property<Guid>("WorkItemEntityId")
+                    b.Property<Guid>("WorkItemId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("WorkItemId");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<TimeSpan>("Duration")
-                        .HasColumnType("time");
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("StatusEntityId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("RecurrenceDays")
+                        .HasColumnType("int");
 
-                    b.HasKey("WorkItemEntityId");
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
 
-                    b.HasIndex("StatusEntityId");
+                    b.Property<DateTime?>("WakingUpWhen")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("WakingUpWhere")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("WorkItemId");
 
                     b.ToTable("WorkItems");
                 });
 
-            modelBuilder.Entity("TimePlanner.DataAccess.Entities.WorkItemEntity", b =>
+            modelBuilder.Entity("TimePlanner.DataAccess.Entities.DurationEntity", b =>
                 {
-                    b.HasOne("TimePlanner.DataAccess.Entities.StatusEntity", null)
-                        .WithMany("WorkItems")
-                        .HasForeignKey("StatusEntityId");
+                    b.HasOne("TimePlanner.DataAccess.Entities.WorkItemEntity", null)
+                        .WithMany("Durations")
+                        .HasForeignKey("WorkItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
-            modelBuilder.Entity("TimePlanner.DataAccess.Entities.StatusEntity", b =>
+            modelBuilder.Entity("TimePlanner.DataAccess.Entities.WorkItemEntity", b =>
                 {
-                    b.Navigation("WorkItems");
+                    b.Navigation("Durations");
                 });
 #pragma warning restore 612, 618
         }
