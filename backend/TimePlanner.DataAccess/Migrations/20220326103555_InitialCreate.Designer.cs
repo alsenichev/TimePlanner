@@ -12,7 +12,7 @@ using TimePlanner.DataAccess;
 namespace TimePlanner.DataAccess.Migrations
 {
     [DbContext(typeof(TimePlannerDbContext))]
-    [Migration("20220317142923_InitialCreate")]
+    [Migration("20220326103555_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
