@@ -27,5 +27,7 @@
     Tomorrow,
     NextWeek,
     Completed,
+    Scheduled,
+    Archived
   }
 }
