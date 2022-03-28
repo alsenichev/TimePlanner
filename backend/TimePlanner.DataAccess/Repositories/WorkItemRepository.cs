@@ -31,7 +31,7 @@ namespace TimePlanner.DataAccess.Repositories
       var awaken = entities.Where(e =>
           e.Category == Category.Scheduled.ToString() &&
           e.NextTime.HasValue &&
-          e.NextTime.Value >= DateTime.Now)
+          e.NextTime.Value <= DateTime.Now)
         .OrderByDescending(e => e.NextTime.Value).ToList();
 
       if (awaken.Count > 0)
