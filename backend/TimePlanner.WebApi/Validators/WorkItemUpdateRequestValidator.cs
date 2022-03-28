@@ -13,17 +13,9 @@ namespace TimePlanner.WebApi.Validators
         .WithMessage("Duration value can not be converted to TimeSpan.")
         .Must(d => DateOnly.TryParse(d.date, out var _))
         .WithMessage("Duration date can not be converted to DateOnly.");
-      When(r => r.wakingUp.HasValue, () =>
-      {
-        RuleFor(r => r.wakingUp.Value.when)
-          .NotEmpty()
-          .Must(w => DateOnly.TryParse(w, out var _))
-          .WithMessage($"Waking up 'when' must be possible to convert to DateOnly");
-        RuleFor(r => r.wakingUp.Value.where)
-          .NotEmpty()
-          .Must(w => Enum.TryParse<Category>(w, out var _))
-          .WithMessage("Waking up 'where' must be possible to convert to Category enum.");
-      });
+      RuleFor(r => r.Name).NotEmpty();
+      RuleFor(r => r.Category).Must(c => Enum.TryParse(typeof(Category), c, true, out var _))
+        .WithMessage("Can not parse the Category enum.");
     }
   }
 }

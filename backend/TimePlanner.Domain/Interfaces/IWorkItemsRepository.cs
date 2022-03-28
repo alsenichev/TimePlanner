@@ -7,7 +7,12 @@ namespace TimePlanner.Domain.Interfaces
     Task<List<WorkItem>> GetWorkItemsAsync();
     Task<WorkItem> GetWorkItemAsync(Guid workItemId);
     Task<WorkItem> CreateWorkItemAsync(string name);
-    Task<WorkItem> UpdateWorkItemAsync(WorkItem workItem);
+    Task<WorkItem> UpdateWorkItemAsync(
+      Guid workItemId,
+      string name,
+      Category targetCategory,
+      int sortOrder,
+      List<Duration> durations);
     Task DeleteWorkItemAsync(Guid workItemId);
   }
 }

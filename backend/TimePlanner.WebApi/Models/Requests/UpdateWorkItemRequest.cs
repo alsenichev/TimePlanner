@@ -3,17 +3,11 @@
 namespace TimePlanner.WebApi.Models.Requests
 {
   public record UpdateWorkItemRequest(
-    Guid id,
-    string name,
-    List<DurationRequest> durations,
-    string category,
-    WakingUpRequest? wakingUp,
-    int? recurrenceDays,
-    DateTime createdAt,
-    DateTime? completedAt,
-    int sortOrder);
+    Guid Id,
+    string Name,
+    string Category,
+    int SortOrder,
+    List<DurationRequest> durations);
 
   public record struct DurationRequest(int? id, string date, string value);
-
-  public record struct WakingUpRequest(string when, string where);
 }

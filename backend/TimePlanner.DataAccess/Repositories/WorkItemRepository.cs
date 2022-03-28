@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TimePlanner.DataAccess.Entities;
 using TimePlanner.DataAccess.Mappers;
@@ -15,7 +14,6 @@ namespace TimePlanner.DataAccess.Repositories
     private readonly TimePlannerDbContext dbContext;
     private readonly IWorkItemEntityMapper workItemEntityMapper;
     private readonly ILogger<WorkItemRepository> logger;
-
 
     public WorkItemRepository(
       TimePlannerDbContext dbContext,
@@ -105,45 +103,57 @@ namespace TimePlanner.DataAccess.Repositories
       return await GetWorkItemAsync(entity.WorkItemId);
     }
 
-    public async Task<WorkItem> UpdateWorkItemAsync(WorkItem workItem)
+    public async Task<WorkItem> UpdateWorkItemAsync(
+      Guid workItemId,
+      string name,
+      Category targetCategory,
+      int sortOrder,
+      List<Duration> durations)
     {
       var entities = dbContext.WorkItemEntities.Include(i => i.Durations)
         .Where(i => i.Category != Category.Archived.ToString());
-      WorkItemEntity? sourceEntity = entities.FirstOrDefault(e => e.WorkItemId == workItem.Id.Value);
-      if (sourceEntity == null)
+      WorkItemEntity? entity = entities.FirstOrDefault(e => e.WorkItemId == workItemId);
+      if (entity == null)
       {
         throw new EntityMissingException();
       }
-      WorkItem sourceModel = workItemEntityMapper.Map(sourceEntity);
+
+      entity.Name = name;
+      entity.Durations = durations.Select(d => workItemEntityMapper.Map(workItemId, d)).ToList();
 
       // update sorting and archive
       DateTime archiveThreashold = DateTime.Now.AddDays(-30);
       List<SortData> models = new List<SortData>();
-      if (sourceModel.Category != workItem.Category)
+      if (entity.Category != targetCategory.ToString())
       {
         models = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
         Dictionary<Guid, SortData> ordered = Sorting.ChangeCategory(
-          models, workItem.Id.Value, workItem.Category).ToDictionary(i => i.Id);
+          models, workItemId, targetCategory).ToDictionary(i => i.Id);
         foreach (var e in entities)
         {
           e.SortOrder = ordered[e.WorkItemId].SortOrder;
         }
 
-        workItem.SortOrder = ordered[workItem.Id.Value].SortOrder;
+        if (targetCategory == Category.Completed)
+        {
+          entity.CompletedAt = DateTime.Now;
+        }
+
+        entity.Category = targetCategory.ToString();
       }
-      else if(sourceModel.SortOrder != workItem.SortOrder)
+      else if(entity.SortOrder != sortOrder)
       {
         models = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
         Dictionary<Guid, SortData> ordered = Sorting.ChangeSortOrder(
           models,
-          workItemEntityMapper.MapSortData(sourceEntity),
-          workItem.SortOrder - sourceModel.SortOrder).ToDictionary(i => i.Id);
+          workItemEntityMapper.MapSortData(entity),
+          sortOrder - entity.SortOrder).ToDictionary(i => i.Id);
         foreach (var e in entities)
         {
           e.SortOrder = ordered[e.WorkItemId].SortOrder;
         }
-        workItem.SortOrder = ordered[workItem.Id.Value].SortOrder;
       }
+
       foreach (var e in entities)
       {
         if (e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreashold.Date)
@@ -151,10 +161,11 @@ namespace TimePlanner.DataAccess.Repositories
           e.Category = Category.Archived.ToString();
         }
       }
+
       try
       {
         dbContext.UpdateRange(entities);
-        dbContext.Update(workItemEntityMapper.UpdateFrom(workItem, sourceEntity));
+        dbContext.Update(entity);
         await dbContext.SaveChangesAsync();
       }
       catch (Exception ex)
@@ -164,7 +175,7 @@ namespace TimePlanner.DataAccess.Repositories
         throw new DataAccessException();
       }
 
-      return await GetWorkItemAsync(sourceEntity.WorkItemId);
+      return await GetWorkItemAsync(entity.WorkItemId);
     }
 
     public async Task DeleteWorkItemAsync(Guid workItemId)

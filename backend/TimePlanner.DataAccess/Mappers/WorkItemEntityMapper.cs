@@ -43,14 +43,12 @@ namespace TimePlanner.DataAccess.Mappers
       return new WorkItem(
         entity.WorkItemId,
         entity.Name,
-        entity.Durations?.Select(d => Map(d)).ToList()?? new List<Duration>(),
         MapCategory(entity.Category),
-        entity.WakingUpWhen.HasValue && entity.WakingUpWhere != null
-          ? new WakingUp(DateOnly.FromDateTime(entity.WakingUpWhen.Value), MapCategory(entity.WakingUpWhere))
-          : null,
-        entity.RecurrenceDays.HasValue ? new Recurrence(entity.RecurrenceDays.Value) : null,
-        new History(entity.CreatedAt, entity.CompletedAt),
-        entity.SortOrder);
+        entity.CreatedAt,
+        entity.CompletedAt,
+        entity.NextTime,
+        entity.SortOrder,
+        entity.Durations.Select(d => Map(d)).ToList());
     }
 
     public WorkItemEntity Map(WorkItem workItem)
@@ -60,28 +58,12 @@ namespace TimePlanner.DataAccess.Mappers
         WorkItemId = workItem.Id ?? Guid.Empty,
         Name = workItem.Name,
         Category = workItem.Category.ToString(),
-        CompletedAt = workItem.History.CompletedAt,
-        CreatedAt = workItem.History.CreatedAt,
+        CompletedAt = workItem.CompletedAt,
+        CreatedAt = workItem.CreatedAt,
         Durations = workItem.Durations.Select(d => Map(workItem.Id ?? Guid.Empty, d)).ToList(),
-        RecurrenceDays = workItem.Recurrence?.Days,
-        WakingUpWhen = workItem.WakingUp?.When.ToDateTime(TimeOnly.MinValue),
-        WakingUpWhere = workItem.WakingUp?.Where.ToString(),
+        NextTime = workItem.NextTime,
         SortOrder = workItem.SortOrder
       };
-    }
-
-    public WorkItemEntity UpdateFrom(WorkItem workItem, WorkItemEntity source)
-    {
-      source.Name = workItem.Name;
-      source.Category = workItem.Category.ToString();
-      source.CompletedAt = workItem.History.CompletedAt;
-      source.CreatedAt = workItem.History.CreatedAt;
-      source.Durations = workItem.Durations.Select(d => Map(workItem.Id ?? Guid.Empty, d)).ToList();
-      source.RecurrenceDays = workItem.Recurrence?.Days;
-      source.WakingUpWhen = workItem.WakingUp?.When.ToDateTime(TimeOnly.MinValue);
-      source.WakingUpWhere = workItem.WakingUp?.Where.ToString();
-      source.SortOrder = workItem.SortOrder;
-      return source;
     }
   }
 }

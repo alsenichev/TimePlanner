@@ -15,20 +15,13 @@ internal class WorkItemResponseMapper : IWorkItemResponseMapper
     return new WorkItemResponse
     {
       Category = workItem.Category,
-      CompletedAt = workItem.History.CompletedAt,
-      CreatedAt = workItem.History.CreatedAt,
+      CompletedAt = workItem.CompletedAt,
+      CreatedAt = workItem.CreatedAt,
       Durations = workItem.Durations?.Select(d => Map(d)).ToList() ?? new List<DurationResponse>(),
       Id = workItem.Id.Value,
       Name = workItem.Name,
-      RecurrenceDays = workItem.Recurrence.HasValue ? workItem.Recurrence.Value.Days : null,
       SortOrder = workItem.SortOrder,
-      WakingUp = workItem.WakingUp.HasValue
-        ? new WakingUpResponse
-        {
-          When = workItem.WakingUp.Value.When.ToString(),
-          Where = workItem.WakingUp.Value.Where
-        }
-        : null
+      NextTime = workItem.NextTime
     };
   }
 }

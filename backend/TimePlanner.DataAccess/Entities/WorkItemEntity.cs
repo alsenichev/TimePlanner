@@ -17,11 +17,9 @@ namespace TimePlanner.DataAccess.Entities
     public string Category { get; set; }
 
     public int SortOrder { get; set; }
+
+    public DateTime? NextTime { get; set; }
     
-    public DateTime? WakingUpWhen { get; set; }
-
-    public string? WakingUpWhere { get; set; }
-
     public int? RecurrenceDays { get; set; }
     
     public DateTime CreatedAt { get; set; }

@@ -28,21 +28,6 @@
         </div>
       </div>
     </div>
-    <div formGroupName="wakingUp" class="row my-3">
-      <div class="col-lg-4">
-        <label for="when" class="form-label">Waking up when</label>
-        <input type="text" class="form-control" id="when" formControlName="when">
-      </div>
-      <div class="col-lg-4">
-        <label for="where" class="form-label">Category</label>
-        <select class="form-select" formControlName="where">
-          <option value=""></option>
-          <option value="Today">Today</option>
-          <option value="Tomorrow">Tomorrow</option>
-          <option value="NextWeek">Next Week</option>
-        </select>
-      </div>
-    </div>
     <div class="row">
       <div class="d-grid d-flex gap-2">
         <button class="btn btn-outline-danger me-auto" type="button" (click)="deleteWorkItem()">

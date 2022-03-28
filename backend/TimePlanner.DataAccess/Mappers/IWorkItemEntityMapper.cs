@@ -13,7 +13,5 @@ namespace TimePlanner.DataAccess.Mappers
     WorkItemEntity Map(WorkItem workItem);
 
     DurationEntity Map(Guid workItemId, Duration duration);
-
-    WorkItemEntity UpdateFrom(WorkItem workItem, WorkItemEntity source);
   }
 }

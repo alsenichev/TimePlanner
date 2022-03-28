@@ -19,11 +19,6 @@ export class WorkItemEditorComponent {
       this.workItemForm.patchValue({
         name: workItem.name,
         category: workItem.category,
-        recurrenceDays: workItem.recurrenceDays,
-        wakingUp:{
-          when: workItem.wakingUp?.when,
-          where: workItem.wakingUp?.where
-        }
       });
       this._currentWorkItem = workItem;
       this.formVisible = true;
@@ -38,10 +33,7 @@ export class WorkItemEditorComponent {
     name: ['', Validators.required],
     category: [''],
     recurrenceDays: [''],
-    wakingUp: this.fb.group({
-      when: [''],
-      where: ['']
-    })
+    nextTime: ['']
   });
 
   cancel(){
@@ -58,11 +50,7 @@ export class WorkItemEditorComponent {
       id: this.currentWorkItem!.id,
       name: this.workItemForm.value.name,
       category: this.workItemForm.value.category,
-      recurrenceDays: this.workItemForm.value.recurrenceDays,
-      wakingUp: this.workItemForm.value.wakingUp?.when != undefined && this.workItemForm.value.wakingUp?.where != undefined ? {
-        when: this.workItemForm.value.wakingUp.when,
-        where: this.workItemForm.value.wakingUp.where
-      } : undefined,
+      nextTime: this.currentWorkItem.nextTime,
       durations: this.currentWorkItem!.durations,
       sortOrder: this.currentWorkItem!.sortOrder,
       completedAt: this.currentWorkItem!.completedAt
