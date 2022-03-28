@@ -15,17 +15,15 @@ export class WorkItemDetailsComponent {
   get workItem(): WorkItem { return this._workItem; }
   set workItem(workItem: WorkItem) {
     this._workItem = workItem;
-    this._isComplete = workItem.completedAt != undefined
+    this._isComplete = workItem.category == 'Completed'
   }
 
   get isComplete(): boolean { return this._isComplete; }
   set isComplete(isComplete: boolean){
     this._isComplete= this.isComplete;
     if(isComplete){
-      this._workItem.completedAt = new Date().toJSON();
       this._workItem.category = 'Completed';
     }else{
-      this._workItem.completedAt = undefined;
       this._workItem.category = 'Today';
     }
     this.workItemChanged.emit(this._workItem);

@@ -139,6 +139,11 @@ namespace TimePlanner.DataAccess.Repositories
           entity.CompletedAt = DateTime.Now;
         }
 
+        if (entity.Category.Equals(Category.Completed.ToString()))
+        {
+          entity.CompletedAt = null;
+        }
+
         entity.Category = targetCategory.ToString();
       }
       else if(entity.SortOrder != sortOrder)
