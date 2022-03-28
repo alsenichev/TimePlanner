@@ -29,13 +29,17 @@ export class TimeTrackingComponent implements OnInit {
   nextWeekWorkItems? : WorkItem[];
   someDayWorkItems? : WorkItem[];
   completedWorkItems? : WorkItem[];
+  scheduledWorkItems? : WorkItem[];
 
    filterWorkItems(items: WorkItem[]){
     this.todayWorkItems = items.filter(i => i.category == 'Today');
     this.tomorrowWorkItems = items.filter(i => i.category == 'Tomorrow');
     this.nextWeekWorkItems = items.filter(i => i.category == 'NextWeek');
     this.completedWorkItems = items.filter(i => i.category == 'Completed');
-    this.completedWorkItems.sort((i,j)=> Date.parse(j.completedAt!) - Date.parse(i.completedAt!));
+    this.completedWorkItems.sort((i,j) => Date.parse(j.completedAt!) - Date.parse(i.completedAt!));
+    this.scheduledWorkItems = items.filter(i => i.category == 'Scheduled');
+    this.scheduledWorkItems.sort((i,j) => Date.parse(j.nextTime!) - Date.parse(i.nextTime!));
+
   }
 
   loadWorkItems(){

@@ -18,7 +18,7 @@ export class WorkItemEditorComponent {
     if(workItem != undefined){
       this.workItemForm.patchValue({
         name: workItem.name,
-        category: workItem.category,
+        recurrence: workItem.nextTime == undefined ? undefined : 'Daily'
       });
       this._currentWorkItem = workItem;
       this.formVisible = true;
@@ -31,9 +31,7 @@ export class WorkItemEditorComponent {
 
   workItemForm = this.fb.group({
     name: ['', Validators.required],
-    category: [''],
-    recurrenceDays: [''],
-    nextTime: ['']
+    recurrence: ['']
   });
 
   cancel(){
@@ -49,11 +47,11 @@ export class WorkItemEditorComponent {
     let workItem : WorkItem = {
       id: this.currentWorkItem!.id,
       name: this.workItemForm.value.name,
-      category: this.workItemForm.value.category,
+      category: this.workItemForm.value.recurrence == 'Daily'? 'Scheduled' : this.currentWorkItem.category == 'Scheduled' ? 'Today' : this.currentWorkItem.category,
       nextTime: this.currentWorkItem.nextTime,
-      durations: this.currentWorkItem!.durations,
-      sortOrder: this.currentWorkItem!.sortOrder,
-      completedAt: this.currentWorkItem!.completedAt
+      durations: this.currentWorkItem.durations,
+      sortOrder: this.currentWorkItem.sortOrder,
+      completedAt: this.currentWorkItem.completedAt
     };
     this.formVisible = false;
     this.editComplete.emit(workItem);

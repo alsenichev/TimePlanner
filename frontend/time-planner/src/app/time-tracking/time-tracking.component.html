@@ -53,6 +53,14 @@
                 </div>
               </ng-template>
             </li>
+            <li ngbNavItem="scheduled">
+              <a ngbNavLink>Scheduled</a>
+              <ng-template ngbNavContent>
+                <div *ngFor="let workItem of scheduledWorkItems"> 
+                  <app-work-item-details [workItem]="workItem" (workItemChanged)="onWorkItemChanged($event)" (workItemEdit)="onEditWorkItem($event)"></app-work-item-details>
+                </div>
+              </ng-template>
+            </li>
           </ul>
           </div>
 

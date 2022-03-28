@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.ComponentModel;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TimePlanner.DataAccess.Entities;
 using TimePlanner.DataAccess.Mappers;
@@ -15,6 +16,64 @@ namespace TimePlanner.DataAccess.Repositories
     private readonly IWorkItemEntityMapper workItemEntityMapper;
     private readonly ILogger<WorkItemRepository> logger;
 
+    private async Task UpdateArchivedAndRepeating()
+    {
+      var entities = dbContext.WorkItemEntities
+        .Where(i => i.Category != Category.Archived.ToString());
+      DateTime archiveThreshold = DateTime.Now.AddDays(-30);
+      var archive = entities.Where(e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreshold.Date)
+        .ToList();
+      foreach (var entity in archive)
+      {
+        entity.Category = Category.Archived.ToString();
+      }
+
+      var awaken = entities.Where(e =>
+          e.Category == Category.Scheduled.ToString() &&
+          e.NextTime.HasValue &&
+          e.NextTime.Value >= DateTime.Now)
+        .OrderByDescending(e => e.NextTime.Value).ToList();
+
+      if (awaken.Count > 0)
+      {
+        List<SortData> sort = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
+        foreach (var entity in awaken)
+        {
+          sort = Sorting.ChangeCategory(sort, entity.WorkItemId, Category.Today).ToList();
+        }
+
+        var ids = sort.ToDictionary(i => i.Id);
+        foreach (var entity in entities)
+        {
+          entity.SortOrder = ids[entity.WorkItemId].SortOrder;
+        }
+
+        foreach (var entity in awaken)
+        {
+          entity.NextTime = CalclateNextTime(entity);
+        }
+      }
+
+      try
+      {
+        dbContext.UpdateRange(archive);
+        dbContext.UpdateRange(awaken);
+        await dbContext.SaveChangesAsync();
+      }
+      catch (Exception ex)
+      {
+        logger.LogError(ex, "Failed to update archived/awaken work items.");
+
+        throw new DataAccessException();
+      }
+    }
+
+    private DateTime? CalclateNextTime(WorkItemEntity entity)
+    {
+      return DateTime.Now.AddDays(1);
+      // TODO read entity's recurrence formula and use RecurrenceService
+    }
+
     public WorkItemRepository(
       TimePlannerDbContext dbContext,
       IWorkItemEntityMapper workItemEntityMapper,
@@ -25,29 +84,10 @@ namespace TimePlanner.DataAccess.Repositories
       this.logger = logger;
     }
 
-    private async Task UpdateArchivedAndRepeating()
-    {
-      var entities = dbContext.WorkItemEntities
-        .Where(i => i.Category != Category.Archived.ToString());
-      DateTime archiveThreashold = DateTime.Now.AddDays(-30);
-      var archive = entities.Where(e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreashold.Date)
-        .ToList();
-      try
-      {
-        dbContext.UpdateRange(entities);
-        await dbContext.SaveChangesAsync();
-      }
-      catch (Exception ex)
-      {
-        logger.LogError(ex, "Failed to create the work item.");
-
-        throw new DataAccessException();
-      }
-    }
-
     public async Task<List<WorkItem>> GetWorkItemsAsync()
     {
       await UpdateArchivedAndRepeating();
+
       return await dbContext
         .WorkItemEntities
         .Where(i => i.Category != Category.Archived.ToString())
@@ -157,6 +197,16 @@ namespace TimePlanner.DataAccess.Repositories
         if (entity.Category.Equals(Category.Completed.ToString()))
         {
           entity.CompletedAt = null;
+        }
+
+        if (targetCategory == Category.Scheduled)
+        {
+          entity.NextTime = CalclateNextTime(entity);
+        }
+
+        if (entity.Category.Equals(Category.Scheduled.ToString()))
+        {
+          entity.NextTime = null;
         }
 
         entity.Category = targetCategory.ToString();
