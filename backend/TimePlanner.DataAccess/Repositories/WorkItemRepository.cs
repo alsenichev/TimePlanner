@@ -25,9 +25,30 @@ namespace TimePlanner.DataAccess.Repositories
       this.logger = logger;
     }
 
-    public Task<List<WorkItem>> GetWorkItemsAsync()
+    private async Task UpdateArchivedAndRepeating()
     {
-      return dbContext
+      var entities = dbContext.WorkItemEntities
+        .Where(i => i.Category != Category.Archived.ToString());
+      DateTime archiveThreashold = DateTime.Now.AddDays(-30);
+      var archive = entities.Where(e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreashold.Date)
+        .ToList();
+      try
+      {
+        dbContext.UpdateRange(entities);
+        await dbContext.SaveChangesAsync();
+      }
+      catch (Exception ex)
+      {
+        logger.LogError(ex, "Failed to create the work item.");
+
+        throw new DataAccessException();
+      }
+    }
+
+    public async Task<List<WorkItem>> GetWorkItemsAsync()
+    {
+      await UpdateArchivedAndRepeating();
+      return await dbContext
         .WorkItemEntities
         .Where(i => i.Category != Category.Archived.ToString())
         .Include(w => w.Durations)
@@ -65,8 +86,7 @@ namespace TimePlanner.DataAccess.Repositories
 
     public async Task<WorkItem> CreateWorkItemAsync(string name)
     {
-      // update sorting and archive
-      DateTime archiveThreashold = DateTime.Now.AddDays(-30);
+      // update sorting
       var entities = dbContext.WorkItemEntities.Where(i => i.Category != Category.Archived.ToString());
       List<SortData> sortModels = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
       var sortModel = new SortData(Guid.NewGuid(), Category.Today, 0);
@@ -74,10 +94,6 @@ namespace TimePlanner.DataAccess.Repositories
       foreach (var e in entities)
       {
         e.SortOrder = ordered[e.WorkItemId].SortOrder;
-        if (e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreashold.Date)
-        {
-          e.Category = Category.Archived.ToString();
-        }
       }
       
       var entity = new WorkItemEntity
@@ -121,8 +137,7 @@ namespace TimePlanner.DataAccess.Repositories
       entity.Name = name;
       entity.Durations = durations.Select(d => workItemEntityMapper.Map(workItemId, d)).ToList();
 
-      // update sorting and archive
-      DateTime archiveThreashold = DateTime.Now.AddDays(-30);
+      // update sorting
       List<SortData> models = new List<SortData>();
       if (entity.Category != targetCategory.ToString())
       {
@@ -156,14 +171,6 @@ namespace TimePlanner.DataAccess.Repositories
         foreach (var e in entities)
         {
           e.SortOrder = ordered[e.WorkItemId].SortOrder;
-        }
-      }
-
-      foreach (var e in entities)
-      {
-        if (e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreashold.Date)
-        {
-          e.Category = Category.Archived.ToString();
         }
       }
 
