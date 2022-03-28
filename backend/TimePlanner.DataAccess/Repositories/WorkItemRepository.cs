@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Logging;
 using TimePlanner.DataAccess.Entities;
 using TimePlanner.DataAccess.Mappers;
@@ -32,6 +31,7 @@ namespace TimePlanner.DataAccess.Repositories
     {
       return dbContext
         .WorkItemEntities
+        .Where(i => i.Category != Category.Archived.ToString())
         .Include(w => w.Durations)
         .OrderBy(e => e.SortOrder)
         .AsNoTracking()
@@ -67,14 +67,19 @@ namespace TimePlanner.DataAccess.Repositories
 
     public async Task<WorkItem> CreateWorkItemAsync(string name)
     {
-      // update sorting
-      DbSet<WorkItemEntity> entities = dbContext.WorkItemEntities;
+      // update sorting and archive
+      DateTime archiveThreashold = DateTime.Now.AddDays(-30);
+      var entities = dbContext.WorkItemEntities.Where(i => i.Category != Category.Archived.ToString());
       List<SortData> sortModels = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
       var sortModel = new SortData(Guid.NewGuid(), Category.Today, 0);
       Dictionary<Guid, SortData> ordered = Sorting.AddItem(sortModels, sortModel).ToDictionary(i => i.Id);
       foreach (var e in entities)
       {
         e.SortOrder = ordered[e.WorkItemId].SortOrder;
+        if (e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreashold.Date)
+        {
+          e.Category = Category.Archived.ToString();
+        }
       }
       
       var entity = new WorkItemEntity
@@ -102,7 +107,8 @@ namespace TimePlanner.DataAccess.Repositories
 
     public async Task<WorkItem> UpdateWorkItemAsync(WorkItem workItem)
     {
-      var entities = dbContext.WorkItemEntities.Include(i => i.Durations);
+      var entities = dbContext.WorkItemEntities.Include(i => i.Durations)
+        .Where(i => i.Category != Category.Archived.ToString());
       WorkItemEntity? sourceEntity = entities.FirstOrDefault(e => e.WorkItemId == workItem.Id.Value);
       if (sourceEntity == null)
       {
@@ -110,7 +116,8 @@ namespace TimePlanner.DataAccess.Repositories
       }
       WorkItem sourceModel = workItemEntityMapper.Map(sourceEntity);
 
-      // update sorting
+      // update sorting and archive
+      DateTime archiveThreashold = DateTime.Now.AddDays(-30);
       List<SortData> models = new List<SortData>();
       if (sourceModel.Category != workItem.Category)
       {
@@ -137,12 +144,16 @@ namespace TimePlanner.DataAccess.Repositories
         }
         workItem.SortOrder = ordered[workItem.Id.Value].SortOrder;
       }
+      foreach (var e in entities)
+      {
+        if (e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreashold.Date)
+        {
+          e.Category = Category.Archived.ToString();
+        }
+      }
       try
       {
-        if (models.Count > 0)
-        {
-          dbContext.UpdateRange(entities);
-        }
+        dbContext.UpdateRange(entities);
         dbContext.Update(workItemEntityMapper.UpdateFrom(workItem, sourceEntity));
         await dbContext.SaveChangesAsync();
       }
@@ -158,18 +169,23 @@ namespace TimePlanner.DataAccess.Repositories
 
     public async Task DeleteWorkItemAsync(Guid workItemId)
     {
-      var entities = dbContext.WorkItemEntities.Include(i => i.Durations);
+      var entities = dbContext.WorkItemEntities.Include(i => i.Durations).Where(i => i.Category != Category.Archived.ToString());
       WorkItemEntity? entity = entities.FirstOrDefault(e => e.WorkItemId == workItemId);
       if (entity == null)
       {
         throw new EntityMissingException();
       }
-      // update sorting
+      // update sorting and archive
+      DateTime archiveThreashold = DateTime.Now.AddDays(-30);
       List<SortData> sortModels = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
       Dictionary<Guid, SortData> ordered = Sorting.DeleteItem(sortModels, workItemId).ToDictionary(i => i.Id);
       foreach (var e in entities.Where(e => e.WorkItemId != workItemId))
       {
         e.SortOrder = ordered[e.WorkItemId].SortOrder;
+        if (e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreashold.Date)
+        {
+          e.Category = Category.Archived.ToString();
+        }
       }
 
       try
