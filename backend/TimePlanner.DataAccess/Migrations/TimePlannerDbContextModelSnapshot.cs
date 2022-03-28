@@ -92,14 +92,17 @@ namespace TimePlanner.DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("NextTime")
-                        .HasColumnType("datetime2");
-
                     b.Property<int?>("RecurrenceDays")
                         .HasColumnType("int");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("WakingUpWhen")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("WakingUpWhere")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("WorkItemId");
 
