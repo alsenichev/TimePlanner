@@ -20,8 +20,6 @@ namespace TimePlanner.DataAccess.Entities
 
     public DateTime? NextTime { get; set; }
     
-    public int? RecurrenceDays { get; set; }
-    
     public DateTime CreatedAt { get; set; }
 
     public DateTime? CompletedAt { get; set; }
