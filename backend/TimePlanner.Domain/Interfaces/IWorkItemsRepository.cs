@@ -12,8 +12,7 @@ namespace TimePlanner.Domain.Interfaces
       string name,
       Category targetCategory,
       int sortOrder,
-      string recurrence,
-      List<Duration> durations);
+      string recurrence);
     Task DeleteWorkItemAsync(Guid workItemId);
   }
 }

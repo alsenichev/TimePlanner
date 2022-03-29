@@ -13,6 +13,8 @@ namespace TimePlanner.DataAccess.Mappers
     WorkItemEntity Map(WorkItem workItem);
 
     DurationEntity Map(Guid workItemId, Duration duration);
-    RecurrenceEntity? ParseRecurrence(Guid workItemId, string recurence);
+    Recurrence Map(RecurrenceEntity entity);
+
+    RecurrenceEntity Map(Recurrence model);
   }
 }

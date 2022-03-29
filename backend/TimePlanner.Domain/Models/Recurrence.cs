@@ -28,14 +28,16 @@
   }
 
   public record struct Recurrence(
-    int YearEveryN,
-    List<int> CustomYears,
-    int MonthEveryN,
-    List<int> CustomMonths,
-    int WeekEveryN,
-    List<int> CustomWeeks,
-    int DayEveryN,
-    List<int> CustomDays);
+    Guid WorkItemId,
+    int? YearsEveryN,
+    List<int>? YearsCustom,
+    int? MonthsEveryN,
+    List<int>? MonthsCustom,
+    int? WeeksEveryN,
+    List<int>? WeeksCustom,
+    int? DaysEveryN,
+    List<int>? DaysCustom,
+    bool IsAfterPreviousCompleted);
 
   public interface IRecurrence
   {

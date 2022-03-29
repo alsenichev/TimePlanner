@@ -8,11 +8,11 @@ namespace TimePlanner.WebApi.Validators
   {
     public WorkItemUpdateRequestValidator()
     {
-      RuleForEach(r => r.durations)
-        .Must(d => TimeSpan.TryParse(d.value, out var _))
-        .WithMessage("Duration value can not be converted to TimeSpan.")
-        .Must(d => DateOnly.TryParse(d.date, out var _))
-        .WithMessage("Duration date can not be converted to DateOnly.");
+      //RuleForEach(r => r.durations)
+      //  .Must(d => TimeSpan.TryParse(d.value, out var _))
+      //  .WithMessage("Duration value can not be converted to TimeSpan.")
+      //  .Must(d => DateOnly.TryParse(d.date, out var _))
+      //  .WithMessage("Duration date can not be converted to DateOnly.");
       RuleFor(r => r.Name).NotEmpty();
       RuleFor(r => r.Category).Must(c => Enum.TryParse(typeof(Category), c, true, out var _))
         .WithMessage("Can not parse the Category enum.");

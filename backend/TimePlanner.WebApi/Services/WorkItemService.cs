@@ -30,18 +30,12 @@ public class WorkItemService : IWorkItemService
 
   public Task<WorkItem> UpdateWorkItemAsync(UpdateWorkItemRequest workItemRequest)
   {
-    Duration MapDuration(DurationRequest dr)
-    {
-      return new Duration(dr.id, DateOnly.Parse(dr.date), TimeSpan.Parse(dr.value));
-    }
-
     return workItemRepository.UpdateWorkItemAsync(
       workItemRequest.Id,
       workItemRequest.Name,
       Enum.Parse<Category>(workItemRequest.Category),
       workItemRequest.SortOrder,
-      workItemRequest.Recurrence,
-      workItemRequest.durations.Select(d => MapDuration(d)).ToList());
+      workItemRequest.Recurrence);
   }
 
   public Task DeleteWorkItemAsync(Guid workItemId)
