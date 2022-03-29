@@ -40,6 +40,7 @@ public class WorkItemService : IWorkItemService
       workItemRequest.Name,
       Enum.Parse<Category>(workItemRequest.Category),
       workItemRequest.SortOrder,
+      workItemRequest.Recurrence,
       workItemRequest.durations.Select(d => MapDuration(d)).ToList());
   }
 

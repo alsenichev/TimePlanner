@@ -27,13 +27,15 @@
     December
   }
 
-  public record struct Days(int Number, bool IsStrict);
-
-  public record struct EveryNWeeks(List<DayOfWeek> WeekDays, int Which, bool IsStrict);
-
-  public record struct EveryNMonths(List<int> Days, List<Month> Which, bool IsStrict);
-
-  public record struct EveryNYears(List<int> Days, List<Month> Months, int Which, bool IsStrict);
+  public record struct Recurrence(
+    int YearEveryN,
+    List<int> CustomYears,
+    int MonthEveryN,
+    List<int> CustomMonths,
+    int WeekEveryN,
+    List<int> CustomWeeks,
+    int DayEveryN,
+    List<int> CustomDays);
 
   public interface IRecurrence
   {

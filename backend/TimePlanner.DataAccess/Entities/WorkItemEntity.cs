@@ -14,6 +14,8 @@ namespace TimePlanner.DataAccess.Entities
 
     public List<DurationEntity> Durations { get; set; }
 
+    public RecurrenceEntity? Recurrence { get; set; }
+
     public string Category { get; set; }
 
     public int SortOrder { get; set; }

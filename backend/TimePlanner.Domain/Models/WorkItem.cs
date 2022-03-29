@@ -10,6 +10,7 @@
     DateTime CreatedAt,
     DateTime? CompletedAt,
     DateTime? NextTime,
+    Recurrence? Recurrence,
     int SortOrder,
     List<Duration> Durations);
 

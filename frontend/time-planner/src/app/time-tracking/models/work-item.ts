@@ -4,6 +4,7 @@ export interface WorkItem{
   durations: Duration[],
   category: string,
   nextTime: string | undefined,
+  recurrence: string | undefined,
   sortOrder: number,
   completedAt: string | undefined
 }

@@ -6,6 +6,7 @@ namespace TimePlanner.WebApi.Models.Requests
     Guid Id,
     string Name,
     string Category,
+    string Recurrence,
     int SortOrder,
     List<DurationRequest> durations);
 

@@ -17,15 +17,9 @@ namespace TimePlanner.DataAccess.Repositories
 
     private async Task UpdateArchivedAndRepeating()
     {
-      var entities = dbContext.WorkItemEntities
-        .Where(i => i.Category != Category.Archived.ToString());
-      DateTime archiveThreshold = DateTime.Now.AddDays(-30);
-      var archive = entities.Where(e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreshold.Date)
-        .ToList();
-      foreach (var entity in archive)
-      {
-        entity.Category = Category.Archived.ToString();
-      }
+      var entities = dbContext.WorkItemEntities.Where(i => i.Category != Category.Archived.ToString());
+      
+      var archived = UpdateArchived(entities);
 
       var awaken = entities.Where(e =>
           e.Category == Category.Scheduled.ToString() &&
@@ -49,15 +43,28 @@ namespace TimePlanner.DataAccess.Repositories
 
         foreach (var entity in awaken)
         {
-          //TODO - if strict create new entity and reset recurrence
-          entity.NextTime = CalclateNextTime(entity);
+          if (!entity.Recurrence.IsAfterPreviousCompleted)
+          {
+            entity.Recurrence = null;
+            var newEntity = new WorkItemEntity
+            {
+              Category = Category.Scheduled.ToString(),
+              CreatedAt = DateTime.Now,
+              Name = entity.Name,
+              SortOrder = int.MaxValue,
+              Recurrence = entity.Recurrence,
+              NextTime = CalculateNextTime(entity.Recurrence!)
+            };
+            dbContext.Add(newEntity);
+          }
+          entity.NextTime = null;
           entity.Category = Category.Today.ToString();
         }
       }
 
       try
       {
-        dbContext.UpdateRange(archive);
+        dbContext.UpdateRange(archived);
         dbContext.UpdateRange(awaken);
         await dbContext.SaveChangesAsync();
       }
@@ -69,10 +76,37 @@ namespace TimePlanner.DataAccess.Repositories
       }
     }
 
-    private DateTime? CalclateNextTime(WorkItemEntity entity)
+    private static List<WorkItemEntity> UpdateArchived(IQueryable<WorkItemEntity> entities)
     {
-      return DateTime.Now.AddDays(1);
-      // TODO read entity's recurrence formula and use RecurrenceService
+      DateTime archiveThreshold = DateTime.Now.AddDays(-30);
+      var archive = entities.Where(e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreshold.Date)
+        .ToList();
+      foreach (var entity in archive)
+      {
+        entity.Category = Category.Archived.ToString();
+      }
+
+      return archive;
+    }
+
+    private DateTime? CalculateNextTime(RecurrenceEntity recurrence)
+    {
+      DateTime baseDate = DateTime.Now;
+      if (recurrence.DaysEveryN.HasValue)
+      {
+        return baseDate.AddDays(recurrence.DaysEveryN.Value);
+      }
+
+      if (recurrence.DaysCustom != null && recurrence.DaysCustom.Count > 0)
+      {
+        int newDay = recurrence.DaysCustom.FirstOrDefault(d => d > baseDate.Day);
+        if (newDay == 0)
+        {
+          return new DateTime(baseDate.Year, baseDate.Month, 1).AddMonths(1).AddDays(recurrence.DaysCustom[0]);
+        }
+      }
+
+      throw new ApplicationException("The recurrence value can not be correctly processed.");
     }
 
     public WorkItemRepository(
@@ -165,6 +199,7 @@ namespace TimePlanner.DataAccess.Repositories
       string name,
       Category targetCategory,
       int sortOrder,
+      string recurrence,
       List<Duration> durations)
     {
       var entities = dbContext.WorkItemEntities.Include(i => i.Durations)
@@ -178,8 +213,38 @@ namespace TimePlanner.DataAccess.Repositories
       entity.Name = name;
       entity.Durations = durations.Select(d => workItemEntityMapper.Map(workItemId, d)).ToList();
 
-      // update sorting
       List<SortData> models = new List<SortData>();
+      if (entity.Recurrence != null)
+      {
+        if (targetCategory == Category.Completed)
+        {
+          entity.CompletedAt = DateTime.Now;
+          if (entity.Recurrence != null)
+          {
+            entity.Recurrence = null;
+            var newEntity = new WorkItemEntity
+            {
+              Category = Category.Scheduled.ToString(),
+              CreatedAt = DateTime.Now,
+              Name = entity.Name,
+              SortOrder = int.MaxValue,
+              Recurrence = entity.Recurrence,
+              NextTime = CalculateNextTime(entity.Recurrence!)
+            };
+            dbContext.Add(newEntity);
+          }
+        }
+        if (string.IsNullOrEmpty(recurrence))
+        {
+          entity.NextTime = null;
+          targetCategory = Category.Today;
+        }
+      }
+      {
+        entity.Recurrence = workItemEntityMapper.ParseRecurrence(entity.WorkItemId, recurrence);
+        entity.NextTime = CalculateNextTime(entity.Recurrence!);
+        // TODO restore in Today if recurrence is set to null
+      }
       if (entity.Category != targetCategory.ToString())
       {
         models = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
@@ -190,20 +255,9 @@ namespace TimePlanner.DataAccess.Repositories
           e.SortOrder = ordered[e.WorkItemId].SortOrder;
         }
 
-        if (targetCategory == Category.Completed)
-        {
-          entity.CompletedAt = DateTime.Now;
-          // TODO - if work item is recurrent create a new one and copy recurrence, reset recurrence at this one.
-        }
-
         if (entity.Category.Equals(Category.Completed.ToString()))
         {
           entity.CompletedAt = null;
-        }
-
-        if (targetCategory == Category.Scheduled)
-        {
-          entity.NextTime = CalclateNextTime(entity);
         }
 
         if (entity.Category.Equals(Category.Scheduled.ToString()))
@@ -250,7 +304,7 @@ namespace TimePlanner.DataAccess.Repositories
       {
         throw new EntityMissingException();
       }
-      // update sorting and archive
+      // update sorting
       DateTime archiveThreashold = DateTime.Now.AddDays(-30);
       List<SortData> sortModels = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
       Dictionary<Guid, SortData> ordered = Sorting.DeleteItem(sortModels, workItemId).ToDictionary(i => i.Id);

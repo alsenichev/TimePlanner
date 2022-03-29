@@ -47,7 +47,8 @@ export class WorkItemEditorComponent {
     let workItem : WorkItem = {
       id: this.currentWorkItem!.id,
       name: this.workItemForm.value.name,
-      category: this.workItemForm.value.recurrence == 'Daily'? 'Scheduled' : this.currentWorkItem.category == 'Scheduled' ? 'Today' : this.currentWorkItem.category,
+      recurrence: this.workItemForm.value.recurrence,
+      category: this.currentWorkItem.category,
       nextTime: this.currentWorkItem.nextTime,
       durations: this.currentWorkItem.durations,
       sortOrder: this.currentWorkItem.sortOrder,
