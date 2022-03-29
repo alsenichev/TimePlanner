@@ -54,7 +54,7 @@ namespace TimePlanner.DataAccess.Repositories
               Name = entity.Name,
               SortOrder = int.MaxValue,
               Recurrence = entity.Recurrence,
-              NextTime = CalculateNextTime(entity.Recurrence!)
+              NextTime = CalculateNextTime(workItemEntityMapper.Map(entity.Recurrence!))
             };
             dbContext.Add(newEntity);
           }
@@ -96,7 +96,7 @@ namespace TimePlanner.DataAccess.Repositories
       dbContext.Update(entity);
     }
 
-    private DateTime? CalculateNextTime(RecurrenceEntity recurrence)
+    private DateTime? CalculateNextTime(Recurrence recurrence)
     {
       DateTime baseDate = DateTime.Now;
       if (recurrence.DaysEveryN.HasValue)
@@ -133,7 +133,7 @@ namespace TimePlanner.DataAccess.Repositories
             Name = entity.Name,
             SortOrder = int.MaxValue,
             Recurrence = entity.Recurrence,
-            NextTime = CalculateNextTime(entity.Recurrence!)
+            NextTime = CalculateNextTime(workItemEntityMapper.Map(entity.Recurrence!))
           };
           dbContext.Add(newEntity);
         }
@@ -165,7 +165,7 @@ namespace TimePlanner.DataAccess.Repositories
         RecurrenceEntity recurrenceEntity = workItemEntityMapper.Map(target);
         entity.Recurrence = recurrenceEntity;
         entity.Category = Category.Scheduled.ToString();
-        entity.NextTime = CalculateNextTime(recurrenceEntity);
+        entity.NextTime = CalculateNextTime(target);
 
         SortForCategoryChange(entities, entity.WorkItemId, Category.Scheduled);
         dbContext.UpdateRange(entities);
@@ -186,7 +186,7 @@ namespace TimePlanner.DataAccess.Repositories
         RecurrenceEntity recurrenceEntity = workItemEntityMapper.Map(target);
         entity.Recurrence = recurrenceEntity;
         entity.Category = Category.Scheduled.ToString();
-        entity.NextTime = CalculateNextTime(recurrenceEntity);
+        entity.NextTime = CalculateNextTime(target);
 
         dbContext.Update(entity);
       }
