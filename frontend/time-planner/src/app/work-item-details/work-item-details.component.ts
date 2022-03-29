@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { WorkItem } from '../time-tracking/models/work-item';
+import { WorkItem, WorkItemUpdateRequest } from '../time-tracking/models/work-item';
 
 @Component({
   selector: 'app-work-item-details',
@@ -9,7 +9,7 @@ import { WorkItem } from '../time-tracking/models/work-item';
 export class WorkItemDetailsComponent {
 
   @Output() workItemEdit = new EventEmitter<WorkItem>();
-  @Output() workItemChanged = new EventEmitter<WorkItem>();
+  @Output() workItemChanged = new EventEmitter<WorkItemUpdateRequest>();
 
   @Input()
   get workItem(): WorkItem { return this._workItem; }
@@ -34,20 +34,31 @@ export class WorkItemDetailsComponent {
     
   constructor() { }
 
+  emitChanged(){
+    let request : WorkItemUpdateRequest = {
+      id: this._workItem.id,
+      name: this._workItem.name,
+      recurrence: this._workItem.recurrence,
+      category: this._workItem.category,
+      sortOrder: this._workItem.sortOrder,
+    };
+    this.workItemChanged.emit(request);
+  }
+
   onEditWorkItem(){
     this.workItemEdit.emit(this._workItem);
   }
 
   today(){
     this._workItem.category = "Today";
-    this.workItemChanged.emit(this._workItem)
+    this.emitChanged();
   }
   tomorrow(){
     this._workItem.category = "Tomorrow";
-    this.workItemChanged.emit(this._workItem)
+    this.emitChanged();
   }
   nextWeek(){
     this._workItem.category = "NextWeek";
-    this.workItemChanged.emit(this._workItem)
+    this.emitChanged();
   }
 }

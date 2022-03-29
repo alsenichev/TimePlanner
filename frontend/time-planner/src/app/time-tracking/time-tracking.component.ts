@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MessageService } from '../messages/message.service';
 import { Status } from './models/status';
-import { WorkItem } from './models/work-item';
+import { WorkItem, WorkItemUpdateRequest } from './models/work-item';
 import { TimeTrackingService } from './time-tracking.service';
 import { FormBuilder } from '@angular/forms';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
@@ -65,7 +65,7 @@ export class TimeTrackingComponent implements OnInit {
     this.currentWorkItem = workItem;
   }
 
-  onWorkItemChanged(workItem: WorkItem){
+  onWorkItemChanged(workItem: WorkItemUpdateRequest){
     this.timeTrackingService.updateWorkItem(workItem).subscribe(wi=>{
       this.loadWorkItems();
       this.currentWorkItem = undefined;
@@ -95,15 +95,20 @@ export class TimeTrackingComponent implements OnInit {
   reorderWorkItems(source: WorkItem[], event: CdkDragDrop<string[]>){
     let workItem: WorkItem = source[event.previousIndex];
     let diff:number = event.currentIndex - event.previousIndex;
-    workItem.sortOrder += diff;
-    this.timeTrackingService.updateWorkItem(workItem).subscribe(wi=>{
+    let request: WorkItemUpdateRequest = {
+      id: workItem.id,
+      category: workItem.category,
+      name: workItem.name,
+      recurrence: workItem.recurrence,
+      sortOrder: workItem.sortOrder + diff
+    }
+    this.timeTrackingService.updateWorkItem(request).subscribe(wi=>{
       this.loadWorkItems();
     });
   }
 
 
   ngOnInit(): void {
-    //this.loadStatus();
     this.loadWorkItems();
   }
 

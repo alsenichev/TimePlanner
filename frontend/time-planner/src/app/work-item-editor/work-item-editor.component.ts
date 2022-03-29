@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { WorkItem } from '../time-tracking/models/work-item';
+import { WorkItem, WorkItemUpdateRequest } from '../time-tracking/models/work-item';
 
 @Component({
   selector: 'app-work-item-editor',
@@ -9,7 +9,7 @@ import { WorkItem } from '../time-tracking/models/work-item';
 })
 export class WorkItemEditorComponent {
   
-  @Output() editComplete = new EventEmitter<WorkItem>();
+  @Output() editComplete = new EventEmitter<WorkItemUpdateRequest>();
   @Output() workItemDeleted = new EventEmitter<WorkItem>();
 
   @Input()
@@ -18,7 +18,7 @@ export class WorkItemEditorComponent {
     if(workItem != undefined){
       this.workItemForm.patchValue({
         name: workItem.name,
-        recurrence: workItem.nextTime == undefined ? undefined : 'Daily'
+        recurrence: workItem.recurrence
       });
       this._currentWorkItem = workItem;
       this.formVisible = true;
@@ -44,17 +44,14 @@ export class WorkItemEditorComponent {
   }
 
   onSubmit(){
-    let workItem : WorkItem = {
+    let workItemRequest : WorkItemUpdateRequest = {
       id: this.currentWorkItem!.id,
       name: this.workItemForm.value.name,
       recurrence: this.workItemForm.value.recurrence,
       category: this.currentWorkItem.category,
-      nextTime: this.currentWorkItem.nextTime,
-      durations: this.currentWorkItem.durations,
       sortOrder: this.currentWorkItem.sortOrder,
-      completedAt: this.currentWorkItem.completedAt
     };
     this.formVisible = false;
-    this.editComplete.emit(workItem);
+    this.editComplete.emit(workItemRequest);
   }
 }

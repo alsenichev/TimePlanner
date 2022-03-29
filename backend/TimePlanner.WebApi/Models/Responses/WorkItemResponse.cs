@@ -18,7 +18,7 @@ namespace TimePlanner.WebApi.Models.Responses
 
     public DateTime? CompletedAt { get; set; }
 
-    public int? RecurrenceDays { get; set; }
+    public string Recurrence { get; set; }
 
     public int SortOrder { get; set; }
 

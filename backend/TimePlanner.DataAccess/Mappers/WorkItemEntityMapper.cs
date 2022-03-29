@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Text.Json.Serialization;
 using TimePlanner.DataAccess.Entities;
 using TimePlanner.Domain.Models;
 using TimePlanner.Domain.Utils;
@@ -49,19 +48,9 @@ namespace TimePlanner.DataAccess.Mappers
         entity.CreatedAt,
         entity.CompletedAt,
         entity.NextTime,
-        MapRecurrence(entity.Recurrence),
+        entity.Recurrence !=null ? JsonSerializer.Serialize(entity.Recurrence!): null,
         entity.SortOrder,
         entity.Durations.Select(d => Map(d)).ToList());
-    }
-
-    private Recurrence? MapRecurrence(RecurrenceEntity? entityRecurrence)
-    {
-      if (entityRecurrence == null)
-      {
-        return null;
-      }
-
-      return new Recurrence();// TODO mabe we don't need domain recurrence?
     }
 
     public WorkItemEntity Map(WorkItem workItem)

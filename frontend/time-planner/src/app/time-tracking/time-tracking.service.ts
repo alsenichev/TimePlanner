@@ -4,7 +4,7 @@ import { Status } from './models/status';
 import { MessageService } from '../messages/message.service';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
-import { WorkItem } from './models/work-item';
+import { WorkItem, WorkItemUpdateRequest } from './models/work-item';
 
 @Injectable({
   providedIn: 'root'
@@ -34,7 +34,7 @@ export class TimeTrackingService {
       );
   }
 
-  updateWorkItem(workItem: WorkItem): Observable<WorkItem>{
+  updateWorkItem(workItem: WorkItemUpdateRequest): Observable<WorkItem>{
     let uri = `${environment.apiUrl}/workItems/${workItem.id}`;
     return this.http.put<WorkItem>(uri, workItem)
     .pipe(
