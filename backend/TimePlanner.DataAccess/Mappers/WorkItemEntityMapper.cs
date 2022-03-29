@@ -35,18 +35,38 @@ namespace TimePlanner.DataAccess.Mappers
       };
     }
 
+    private List<int>? ParseSqlList(string? list)
+    {
+      if (list == null)
+      {
+        return null;
+      }
+
+      var split = list.Split(",", StringSplitOptions.RemoveEmptyEntries);
+      var result = new List<int>();
+      foreach (var entry in split)
+      {
+        if (int.TryParse(entry, out var number))
+        {
+          result.Add(number);
+        }
+      }
+
+      return result;
+    }
+
     public Recurrence Map(RecurrenceEntity entity)
     {
       return new Recurrence(
         entity.WorkItemId,
         entity.YearsEveryN,
-        entity.YearsCustom,
+        ParseSqlList(entity.YearsCustom),
         entity.MonthsEveryN,
-        entity.MonthsCustom,
+        ParseSqlList(entity.MonthsCustom),
         entity.WeeksEveryN,
-        entity.WeeksCustom,
+        ParseSqlList(entity.WeeksCustom),
         entity.DaysEveryN,
-        entity.DaysCustom,
+        ParseSqlList(entity.DaysCustom),
         entity.IsAfterPreviousCompleted);
     }
 
@@ -56,13 +76,13 @@ namespace TimePlanner.DataAccess.Mappers
       {
         WorkItemId = model.WorkItemId,
         YearsEveryN = model.YearsEveryN,
-        YearsCustom = model.YearsCustom,
+        YearsCustom = model.YearsCustom != null ? string.Join(",", model.YearsCustom) : null,
         MonthsEveryN = model.MonthsEveryN,
-        MonthsCustom = model.MonthsCustom,
+        MonthsCustom = model.MonthsCustom != null ? string.Join(",", model.MonthsCustom) : null,
         WeeksEveryN = model.WeeksEveryN,
-        WeeksCustom = model.WeeksCustom,
+        WeeksCustom = model.WeeksCustom != null ? string.Join(",", model.WeeksCustom) : null,
         DaysEveryN = model.DaysEveryN,
-        DaysCustom = model.DaysCustom,
+        DaysCustom = model.DaysCustom != null ? string.Join(",", model.DaysCustom) : null,
         IsAfterPreviousCompleted = model.IsAfterPreviousCompleted
       };
     }
