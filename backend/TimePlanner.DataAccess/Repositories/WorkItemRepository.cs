@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TimePlanner.DataAccess.Entities;
 using TimePlanner.DataAccess.Mappers;
@@ -50,7 +49,9 @@ namespace TimePlanner.DataAccess.Repositories
 
         foreach (var entity in awaken)
         {
+          //TODO - if strict create new entity and reset recurrence
           entity.NextTime = CalclateNextTime(entity);
+          entity.Category = Category.Today.ToString();
         }
       }
 
@@ -192,6 +193,7 @@ namespace TimePlanner.DataAccess.Repositories
         if (targetCategory == Category.Completed)
         {
           entity.CompletedAt = DateTime.Now;
+          // TODO - if work item is recurrent create a new one and copy recurrence, reset recurrence at this one.
         }
 
         if (entity.Category.Equals(Category.Completed.ToString()))
