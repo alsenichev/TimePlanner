@@ -10,5 +10,5 @@
     List<int>? WeeksCustom,
     int? DaysEveryN,
     List<int>? DaysCustom,
-    bool IsAfterPreviousCompleted);
+    bool? IsAfterPreviousCompleted);
 }

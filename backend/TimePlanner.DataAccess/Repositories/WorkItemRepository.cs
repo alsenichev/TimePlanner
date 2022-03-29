@@ -44,18 +44,18 @@ namespace TimePlanner.DataAccess.Repositories
 
         foreach (var entity in awaken)
         {
-          if (!entity.Recurrence.IsAfterPreviousCompleted)
+          if (!entity.IsAfterPreviousCompleted.HasValue || !entity.IsAfterPreviousCompleted.Value)
           {
-            entity.Recurrence = null;
             var newEntity = new WorkItemEntity
             {
               Category = Category.Scheduled.ToString(),
               CreatedAt = DateTime.Now,
               Name = entity.Name,
               SortOrder = int.MaxValue,
-              Recurrence = entity.Recurrence,
-              NextTime = CalculateNextTime(workItemEntityMapper.Map(entity.Recurrence!))
+              NextTime = CalculateNextTime(workItemEntityMapper.ExtractRecurrence(entity))
             };
+            workItemEntityMapper.CopyRecurrence(entity, newEntity);
+            workItemEntityMapper.CleanUpRecurrence(entity);
             dbContext.Add(newEntity);
           }
           entity.NextTime = null;
@@ -123,18 +123,18 @@ namespace TimePlanner.DataAccess.Repositories
       if (targetCategory == Category.Completed)
       {
         entity.CompletedAt = DateTime.Now;
-        if (entity.Recurrence != null)
+        if (entity.IsRecurrent)
         {
-          entity.Recurrence = null;
           var newEntity = new WorkItemEntity
           {
             Category = Category.Scheduled.ToString(),
             CreatedAt = DateTime.Now,
             Name = entity.Name,
             SortOrder = int.MaxValue,
-            Recurrence = entity.Recurrence,
-            NextTime = CalculateNextTime(workItemEntityMapper.Map(entity.Recurrence!))
+            NextTime = CalculateNextTime(workItemEntityMapper.ExtractRecurrence(entity))
           };
+          workItemEntityMapper.CopyRecurrence(entity, newEntity);
+          workItemEntityMapper.CleanUpRecurrence(entity);
           dbContext.Add(newEntity);
         }
       }
@@ -158,14 +158,13 @@ namespace TimePlanner.DataAccess.Repositories
 
     private void UpdateRecurrence(IQueryable<WorkItemEntity> entities, WorkItemEntity entity, string recurrence)
     {
-      if (entity.Recurrence == null)
+      if (!entity.IsRecurrent)
       {
         // assign recurrence
-        Recurrence target = JsonSerializer.Deserialize<Recurrence>(recurrence);
-        RecurrenceEntity recurrenceEntity = workItemEntityMapper.Map(target);
-        entity.Recurrence = recurrenceEntity;
+        Recurrence targetRecurrence = JsonSerializer.Deserialize<Recurrence>(recurrence);
+        workItemEntityMapper.AssignRecurrence(entity, targetRecurrence);
         entity.Category = Category.Scheduled.ToString();
-        entity.NextTime = CalculateNextTime(target);
+        entity.NextTime = CalculateNextTime(targetRecurrence);
 
         SortForCategoryChange(entities, entity.WorkItemId, Category.Scheduled);
         dbContext.UpdateRange(entities);
@@ -173,7 +172,7 @@ namespace TimePlanner.DataAccess.Repositories
       else if (string.IsNullOrEmpty(recurrence))
       {
         // reset existing recurrence
-        entity.Recurrence = null;
+        workItemEntityMapper.CleanUpRecurrence(entity);
         entity.Category = Category.Today.ToString();
         entity.NextTime = null;
 
@@ -182,9 +181,9 @@ namespace TimePlanner.DataAccess.Repositories
       }
       else
       {
+        // replace existing recurrence
         Recurrence target = JsonSerializer.Deserialize<Recurrence>(recurrence);
-        RecurrenceEntity recurrenceEntity = workItemEntityMapper.Map(target);
-        entity.Recurrence = recurrenceEntity;
+        workItemEntityMapper.AssignRecurrence(entity, target);
         entity.Category = Category.Scheduled.ToString();
         entity.NextTime = CalculateNextTime(target);
 
@@ -296,7 +295,7 @@ namespace TimePlanner.DataAccess.Repositories
       int sortOrder,
       string recurrence)
     {
-      IQueryable<WorkItemEntity> entities = dbContext.WorkItemEntities.Include(i => i.Recurrence)
+      IQueryable<WorkItemEntity> entities = dbContext.WorkItemEntities
         .Where(i => i.Category != Category.Archived.ToString());
       WorkItemEntity? entity = entities.FirstOrDefault(e => e.WorkItemId == workItemId);
       if (entity == null)
@@ -316,7 +315,7 @@ namespace TimePlanner.DataAccess.Repositories
       {
         UpdateCategory(entities, entity, targetCategory);
       }
-      else if (entity.Recurrence != null || !string.IsNullOrEmpty(recurrence))
+      else if (entity.IsRecurrent || !string.IsNullOrEmpty(recurrence))
       {
         UpdateRecurrence(entities, entity, recurrence);
       }

@@ -35,6 +35,63 @@ namespace TimePlanner.DataAccess.Mappers
       };
     }
 
+    public Recurrence ExtractRecurrence(WorkItemEntity entity)
+    {
+      return new Recurrence(
+        entity.WorkItemId,
+        entity.YearsEveryN,
+        ParseSqlList(entity.YearsCustom),
+        entity.MonthsEveryN,
+        ParseSqlList(entity.MonthsCustom),
+        entity.WeeksEveryN,
+        ParseSqlList(entity.WeeksCustom),
+        entity.DaysEveryN,
+        ParseSqlList(entity.DaysCustom),
+        entity.IsAfterPreviousCompleted);
+    }
+
+    public void CopyRecurrence(WorkItemEntity source, WorkItemEntity target)
+    {
+      target.IsRecurrent = true;
+      target.YearsEveryN = source.YearsEveryN;
+      target.YearsCustom = source.YearsCustom;
+      target.MonthsEveryN = source.MonthsEveryN;
+      target.MonthsCustom = source.MonthsCustom;
+      target.WeeksEveryN = source.WeeksEveryN;
+      target.WeeksCustom = source.WeeksCustom;
+      target.DaysEveryN = source.DaysEveryN;
+      target.DaysCustom = source.DaysCustom;
+      target.IsAfterPreviousCompleted = source.IsAfterPreviousCompleted;
+    }
+
+    public void CleanUpRecurrence(WorkItemEntity entity)
+    {
+      entity.IsRecurrent = false;
+      entity.YearsEveryN = null;
+      entity.YearsCustom = null;
+      entity.MonthsEveryN = null;
+      entity.MonthsCustom = null;
+      entity.WeeksEveryN = null;
+      entity.WeeksCustom = null;
+      entity.DaysEveryN =null;
+      entity.DaysCustom = null;
+      entity.IsAfterPreviousCompleted = null;
+    }
+
+    public void AssignRecurrence(WorkItemEntity entity, Recurrence model)
+    {
+      entity.IsRecurrent = true;
+      entity.YearsEveryN = model.YearsEveryN;
+      entity.YearsCustom = model.YearsCustom != null ? string.Join(",", model.YearsCustom) : null;
+      entity.MonthsEveryN = model.MonthsEveryN;
+      entity.MonthsCustom = model.MonthsCustom != null ? string.Join(",", model.MonthsCustom) : null;
+      entity.WeeksEveryN = model.WeeksEveryN;
+      entity.WeeksCustom = model.WeeksCustom != null ? string.Join(",", model.WeeksCustom) : null;
+      entity.DaysEveryN = model.DaysEveryN;
+      entity.DaysCustom = model.DaysCustom != null ? string.Join(",", model.DaysCustom) : null;
+      entity.IsAfterPreviousCompleted = model.IsAfterPreviousCompleted;
+    }
+
     private List<int>? ParseSqlList(string? list)
     {
       if (list == null)
@@ -55,38 +112,6 @@ namespace TimePlanner.DataAccess.Mappers
       return result;
     }
 
-    public Recurrence Map(RecurrenceEntity entity)
-    {
-      return new Recurrence(
-        entity.WorkItemId,
-        entity.YearsEveryN,
-        ParseSqlList(entity.YearsCustom),
-        entity.MonthsEveryN,
-        ParseSqlList(entity.MonthsCustom),
-        entity.WeeksEveryN,
-        ParseSqlList(entity.WeeksCustom),
-        entity.DaysEveryN,
-        ParseSqlList(entity.DaysCustom),
-        entity.IsAfterPreviousCompleted);
-    }
-
-    public RecurrenceEntity Map(Recurrence model)
-    {
-      return new RecurrenceEntity
-      {
-        WorkItemId = model.WorkItemId,
-        YearsEveryN = model.YearsEveryN,
-        YearsCustom = model.YearsCustom != null ? string.Join(",", model.YearsCustom) : null,
-        MonthsEveryN = model.MonthsEveryN,
-        MonthsCustom = model.MonthsCustom != null ? string.Join(",", model.MonthsCustom) : null,
-        WeeksEveryN = model.WeeksEveryN,
-        WeeksCustom = model.WeeksCustom != null ? string.Join(",", model.WeeksCustom) : null,
-        DaysEveryN = model.DaysEveryN,
-        DaysCustom = model.DaysCustom != null ? string.Join(",", model.DaysCustom) : null,
-        IsAfterPreviousCompleted = model.IsAfterPreviousCompleted
-      };
-    }
-
     public SortData MapSortData(WorkItemEntity entity)
     {
       return new SortData(entity.WorkItemId, MapCategory(entity.Category), entity.SortOrder);
@@ -101,7 +126,7 @@ namespace TimePlanner.DataAccess.Mappers
         entity.CreatedAt,
         entity.CompletedAt,
         entity.NextTime,
-        entity.Recurrence != null ? JsonSerializer.Serialize(entity.Recurrence!) : null,
+        JsonSerializer.Serialize(ExtractRecurrence(entity)),
         entity.SortOrder,
         entity.Durations.Select(d => Map(d)).ToList());
     }
