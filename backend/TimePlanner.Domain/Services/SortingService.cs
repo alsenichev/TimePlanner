@@ -1,11 +1,11 @@
 ﻿using System.Collections.Immutable;
 using TimePlanner.Domain.Models;
 
-namespace TimePlanner.Domain.Utils
+namespace TimePlanner.Domain.Services
 {
   public record struct SortData(Guid Id, Category Category, int SortOrder);
 
-  public static class Sorting
+  public static class SortingService
   {
     private static List<SortData> PrepareSource(List<SortData> source)
     {

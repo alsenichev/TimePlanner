@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
 using NUnit.Framework;
 using TimePlanner.Domain.Models;
+using TimePlanner.Domain.Services;
 using TimePlanner.Domain.Utils;
 
 namespace TimePlanner.Domain.UnitTests.Utils
@@ -74,7 +75,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(0);
       SortData item = new SortData(Guid.NewGuid(), Category.Today, 0);
 
-      ImmutableList<SortData> result = Sorting.AddItem(source.ToList(), item);
+      ImmutableList<SortData> result = SortingService.AddItem(source.ToList(), item);
 
       VerifyInvariants(result);
       int updatedSortOrder = result.Single(p => p.Id == item.Id).SortOrder;
@@ -114,7 +115,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(0);
       SortData item = new SortData(Guid.NewGuid(), Category.Tomorrow, 0);
 
-      ImmutableList<SortData> result = Sorting.AddItem(source.ToList(), item);
+      ImmutableList<SortData> result = SortingService.AddItem(source.ToList(), item);
 
       VerifyInvariants(result);
       int updatedSortOrder = result.Single(p => p.Id == item.Id).SortOrder;
@@ -159,7 +160,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(0);
       SortData item = new SortData(Guid.NewGuid(), Category.NextWeek, 0);
 
-      ImmutableList<SortData> result = Sorting.AddItem(source.ToList(), item);
+      ImmutableList<SortData> result = SortingService.AddItem(source.ToList(), item);
 
       VerifyInvariants(result);
       int updatedSortOrder = result.Single(p => p.Id == item.Id).SortOrder;
@@ -198,7 +199,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(0);
       SortData item = new SortData(Guid.NewGuid(), Category.Completed, 0);
 
-      ImmutableList<SortData> result = Sorting.AddItem(source.ToList(), item);
+      ImmutableList<SortData> result = SortingService.AddItem(source.ToList(), item);
 
       VerifyInvariants(result);
 
@@ -216,7 +217,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(0);
       SortData item = new SortData(Guid.NewGuid(), Category.Scheduled, 0);
 
-      ImmutableList<SortData> result = Sorting.AddItem(source.ToList(), item);
+      ImmutableList<SortData> result = SortingService.AddItem(source.ToList(), item);
 
       VerifyInvariants(result);
 
@@ -242,7 +243,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
       SortData item = source.First(p => p.Category == from);
 
-      ImmutableList<SortData> result = Sorting.ChangeCategory(source.ToList(), item.Id, to);
+      ImmutableList<SortData> result = SortingService.ChangeCategory(source.ToList(), item.Id, to);
 
       VerifyInvariants(result);
 
@@ -293,7 +294,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
       SortData item = source.First(p => p.Category == from);
 
-      ImmutableList<SortData> result = Sorting.ChangeCategory(source.ToList(), item.Id, Category.Completed);
+      ImmutableList<SortData> result = SortingService.ChangeCategory(source.ToList(), item.Id, Category.Completed);
 
       VerifyInvariants(result);
 
@@ -316,7 +317,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
       SortData item = source.First(p => p.Category == Category.Scheduled);
 
-      ImmutableList<SortData> result = Sorting.ChangeCategory(source.ToList(), item.Id, Category.Completed);
+      ImmutableList<SortData> result = SortingService.ChangeCategory(source.ToList(), item.Id, Category.Completed);
 
       VerifyInvariants(result);
 
@@ -335,7 +336,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
       SortData item = source.First(p => p.Category == from);
 
-      ImmutableList<SortData> result = Sorting.ChangeCategory(source.ToList(), item.Id, Category.Scheduled);
+      ImmutableList<SortData> result = SortingService.ChangeCategory(source.ToList(), item.Id, Category.Scheduled);
 
       VerifyInvariants(result);
 
@@ -358,7 +359,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
       SortData item = source.First(p => p.Category == Category.Completed);
 
-      ImmutableList<SortData> result = Sorting.ChangeCategory(source.ToList(), item.Id, Category.Scheduled);
+      ImmutableList<SortData> result = SortingService.ChangeCategory(source.ToList(), item.Id, Category.Scheduled);
 
       VerifyInvariants(result);
 
@@ -378,7 +379,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
       SortData item = source.First(p => p.Category == category);
 
-      ImmutableList<SortData> result = Sorting.DeleteItem(source.ToList(), item.Id);
+      ImmutableList<SortData> result = SortingService.DeleteItem(source.ToList(), item.Id);
 
       VerifyInvariants(result);
 
@@ -402,7 +403,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
       SortData item = source.First(p => p.Category == category);
 
-      ImmutableList<SortData> result = Sorting.DeleteItem(source.ToList(), item.Id);
+      ImmutableList<SortData> result = SortingService.DeleteItem(source.ToList(), item.Id);
 
       VerifyInvariants(result);
 
@@ -421,7 +422,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
 
       // move 1 to 3
       SortData SortData = source.Where(p => p.Category == category).ToList()[1];
-      ImmutableList<SortData> result = Sorting.ChangeSortOrder(source.ToList(), SortData, 2);
+      ImmutableList<SortData> result = SortingService.ChangeSortOrder(source.ToList(), SortData, 2);
 
       // The expected result is the ordered list with adjacent correct sortOrders (reset for Completed)
       VerifyInvariants(result);
@@ -454,7 +455,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
 
       // move 3 to 1
       SortData SortData = source.Where(p => p.Category == category).ToList()[^1];
-      ImmutableList<SortData> result = Sorting.ChangeSortOrder(source.ToList(), SortData, -2);
+      ImmutableList<SortData> result = SortingService.ChangeSortOrder(source.ToList(), SortData, -2);
 
       // The expected result is the ordered list with adjacent correct sortOrders (reset for Completed)
       VerifyInvariants(result);
@@ -489,7 +490,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       var second = elements[1];
       list[second.SortOrder] = list[second.SortOrder] with { SortOrder = 1000};
       var third = new SortData(Guid.NewGuid(), category, 0);
-      ImmutableList<SortData> result = Sorting.AddItem(list, third);
+      ImmutableList<SortData> result = SortingService.AddItem(list, third);
 
       VerifyInvariants(result);
 

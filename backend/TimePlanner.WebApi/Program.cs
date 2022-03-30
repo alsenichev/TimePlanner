@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using TimePlanner.DataAccess.Mappers;
 using TimePlanner.DataAccess.Repositories;
 using TimePlanner.Domain.Interfaces;
+using TimePlanner.Domain.Services;
 
 var options = new WebApplicationOptions
 {
@@ -35,6 +36,7 @@ builder.Services.AddScoped<IStatusEntityMapper, StatusEntityMapper>();
 builder.Services.AddScoped<IWorkItemEntityMapper, WorkItemEntityMapper>();
 builder.Services.AddScoped<IValidator<CreateWorkItemRequest>, WorkItemCreateRequestValidator>();
 builder.Services.AddScoped<IValidator<UpdateWorkItemRequest>, WorkItemUpdateRequestValidator>();
+builder.Services.AddScoped<ITimeProvider, ProductionTimeProvider>();
 builder.Services.AddDbContext<TimePlannerDbContext>(
   o => o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 

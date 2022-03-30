@@ -6,7 +6,7 @@ using TimePlanner.DataAccess.Mappers;
 using TimePlanner.Domain.Exceptions;
 using TimePlanner.Domain.Interfaces;
 using TimePlanner.Domain.Models;
-using TimePlanner.Domain.Utils;
+using TimePlanner.Domain.Services;
 
 namespace TimePlanner.DataAccess.Repositories
 {
@@ -14,6 +14,7 @@ namespace TimePlanner.DataAccess.Repositories
   {
     private readonly TimePlannerDbContext dbContext;
     private readonly IWorkItemEntityMapper workItemEntityMapper;
+    private readonly IRecurrenceService recurrenceService;
     private readonly ILogger<WorkItemRepository> logger;
 
     private async Task UpdateArchivedAndRepeating()
@@ -33,7 +34,7 @@ namespace TimePlanner.DataAccess.Repositories
         List<SortData> sort = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
         foreach (var entity in awaken)
         {
-          sort = Sorting.ChangeCategory(sort, entity.WorkItemId, Category.Today).ToList();
+          sort = SortingService.ChangeCategory(sort, entity.WorkItemId, Category.Today).ToList();
         }
 
         var ids = sort.ToDictionary(i => i.Id);
@@ -87,7 +88,7 @@ namespace TimePlanner.DataAccess.Repositories
         CreatedAt = DateTime.Now,
         Name = entity.Name,
         SortOrder = int.MaxValue,
-        NextTime = CalculateNextTime(workItemEntityMapper.ExtractRecurrence(entity))
+        NextTime = recurrenceService.CalculateNextTime(workItemEntityMapper.ExtractRecurrence(entity))
       };
       workItemEntityMapper.CopyRecurrence(entity, newEntity);
       if (newEntity.RepetitionCount.HasValue)
@@ -117,26 +118,6 @@ namespace TimePlanner.DataAccess.Repositories
       dbContext.Update(entity);
     }
 
-    private DateTime? CalculateNextTime(Recurrence recurrence)
-    {
-      DateTime baseDate = DateTime.Now;
-      if (recurrence.DaysEveryN.HasValue)
-      {
-        return baseDate.AddDays(recurrence.DaysEveryN.Value);
-      }
-
-      if (recurrence.DaysCustom != null && recurrence.DaysCustom.Count > 0)
-      {
-        int newDay = recurrence.DaysCustom.FirstOrDefault(d => d > baseDate.Day);
-        if (newDay == 0)
-        {
-          return new DateTime(baseDate.Year, baseDate.Month, 1).AddMonths(1).AddDays(recurrence.DaysCustom[0]);
-        }
-      }
-
-      throw new ApplicationException("The recurrence value can not be correctly processed.");
-    }
-
     private void UpdateCategory(IQueryable<WorkItemEntity> entities, WorkItemEntity entity, Category targetCategory)
     {
       SortForCategoryChange(entities, entity.WorkItemId, targetCategory);
@@ -152,7 +133,7 @@ namespace TimePlanner.DataAccess.Repositories
             CreatedAt = DateTime.Now,
             Name = entity.Name,
             SortOrder = int.MaxValue,
-            NextTime = CalculateNextTime(workItemEntityMapper.ExtractRecurrence(entity))
+            NextTime = recurrenceService.CalculateNextTime(workItemEntityMapper.ExtractRecurrence(entity))
           };
           workItemEntityMapper.CopyRecurrence(entity, newEntity);
           if (newEntity.RepetitionCount.HasValue)
@@ -170,7 +151,7 @@ namespace TimePlanner.DataAccess.Repositories
     private void UpdateSortOrder(IQueryable<WorkItemEntity> entities, WorkItemEntity entity, int sortOrder)
     {
       List<SortData> sortData = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
-      Dictionary<Guid, SortData> ordered = Sorting.ChangeSortOrder(
+      Dictionary<Guid, SortData> ordered = SortingService.ChangeSortOrder(
         sortData,
         workItemEntityMapper.MapSortData(entity),
         sortOrder - entity.SortOrder).ToDictionary(i => i.Id);
@@ -189,7 +170,7 @@ namespace TimePlanner.DataAccess.Repositories
         Recurrence targetRecurrence = JsonSerializer.Deserialize<Recurrence>(recurrence);
         workItemEntityMapper.AssignRecurrence(entity, targetRecurrence);
         entity.Category = Category.Scheduled.ToString();
-        entity.NextTime = CalculateNextTime(targetRecurrence);
+        entity.NextTime = recurrenceService.CalculateNextTime(targetRecurrence);
 
         SortForCategoryChange(entities, entity.WorkItemId, Category.Scheduled);
         dbContext.UpdateRange(entities);
@@ -210,7 +191,7 @@ namespace TimePlanner.DataAccess.Repositories
         Recurrence target = JsonSerializer.Deserialize<Recurrence>(recurrence);
         workItemEntityMapper.AssignRecurrence(entity, target);
         entity.Category = Category.Scheduled.ToString();
-        entity.NextTime = CalculateNextTime(target);
+        entity.NextTime = recurrenceService.CalculateNextTime(target);
 
         dbContext.Update(entity);
       }
@@ -220,7 +201,7 @@ namespace TimePlanner.DataAccess.Repositories
     {
       // sort
       var models = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
-      Dictionary<Guid, SortData> ordered = Sorting.ChangeCategory(
+      Dictionary<Guid, SortData> ordered = SortingService.ChangeCategory(
         models, workItemId, targetCategory).ToDictionary(i => i.Id);
       foreach (var e in entities)
       {
@@ -231,11 +212,12 @@ namespace TimePlanner.DataAccess.Repositories
     public WorkItemRepository(
       TimePlannerDbContext dbContext,
       IWorkItemEntityMapper workItemEntityMapper,
-      ILogger<WorkItemRepository> logger)
+      ILogger<WorkItemRepository> logger, IRecurrenceService recurrenceService)
     {
       this.dbContext = dbContext;
       this.workItemEntityMapper = workItemEntityMapper;
       this.logger = logger;
+      this.recurrenceService = recurrenceService;
     }
 
     public async Task<List<WorkItem>> GetWorkItemsAsync()
@@ -284,7 +266,7 @@ namespace TimePlanner.DataAccess.Repositories
       var entities = dbContext.WorkItemEntities.Where(i => i.Category != Category.Archived.ToString());
       List<SortData> sortModels = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
       var sortModel = new SortData(Guid.NewGuid(), Category.Today, 0);
-      Dictionary<Guid, SortData> ordered = Sorting.AddItem(sortModels, sortModel).ToDictionary(i => i.Id);
+      Dictionary<Guid, SortData> ordered = SortingService.AddItem(sortModels, sortModel).ToDictionary(i => i.Id);
       foreach (var e in entities)
       {
         e.SortOrder = ordered[e.WorkItemId].SortOrder;
@@ -374,7 +356,7 @@ namespace TimePlanner.DataAccess.Repositories
       // update sorting
       DateTime archiveThreashold = DateTime.Now.AddDays(-30);
       List<SortData> sortModels = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
-      Dictionary<Guid, SortData> ordered = Sorting.DeleteItem(sortModels, workItemId).ToDictionary(i => i.Id);
+      Dictionary<Guid, SortData> ordered = SortingService.DeleteItem(sortModels, workItemId).ToDictionary(i => i.Id);
       foreach (var e in entities.Where(e => e.WorkItemId != workItemId))
       {
         e.SortOrder = ordered[e.WorkItemId].SortOrder;
