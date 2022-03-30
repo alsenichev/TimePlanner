@@ -45,8 +45,11 @@ namespace TimePlanner.DataAccess.Mappers
         ParseSqlList(entity.MonthsCustom),
         entity.WeeksEveryN,
         ParseSqlList(entity.WeeksCustom),
+        ParseSqlList(entity.WeekDaysCustom),
         entity.DaysEveryN,
         ParseSqlList(entity.DaysCustom),
+        entity.RepetitionCount,
+        entity.MaxRepetitionCount,
         entity.IsAfterPreviousCompleted);
     }
 
@@ -59,8 +62,11 @@ namespace TimePlanner.DataAccess.Mappers
       target.MonthsCustom = source.MonthsCustom;
       target.WeeksEveryN = source.WeeksEveryN;
       target.WeeksCustom = source.WeeksCustom;
+      target.WeekDaysCustom = source.WeekDaysCustom;
       target.DaysEveryN = source.DaysEveryN;
       target.DaysCustom = source.DaysCustom;
+      target.RepetitionCount = source.RepetitionCount;
+      target.MaxRepetitionCount = source.MaxRepetitionCount;
       target.IsAfterPreviousCompleted = source.IsAfterPreviousCompleted;
     }
 
@@ -73,8 +79,11 @@ namespace TimePlanner.DataAccess.Mappers
       entity.MonthsCustom = null;
       entity.WeeksEveryN = null;
       entity.WeeksCustom = null;
+      entity.WeekDaysCustom = null;
       entity.DaysEveryN = null;
       entity.DaysCustom = null;
+      entity.RepetitionCount = null;
+      entity.MaxRepetitionCount = null;
       entity.IsAfterPreviousCompleted = null;
     }
 
@@ -87,8 +96,11 @@ namespace TimePlanner.DataAccess.Mappers
       entity.MonthsCustom = model.MonthsCustom != null ? string.Join(",", model.MonthsCustom) : null;
       entity.WeeksEveryN = model.WeeksEveryN;
       entity.WeeksCustom = model.WeeksCustom != null ? string.Join(",", model.WeeksCustom) : null;
+      entity.WeekDaysCustom = model.WeekDaysCustom != null ? string.Join(",", model.WeekDaysCustom) : null;
       entity.DaysEveryN = model.DaysEveryN;
       entity.DaysCustom = model.DaysCustom != null ? string.Join(",", model.DaysCustom) : null;
+      entity.RepetitionCount = model.RepetitionCount;
+      entity.MaxRepetitionCount = model.MaxRepetitionCount;
       entity.IsAfterPreviousCompleted = model.IsAfterPreviousCompleted;
     }
 

@@ -40,7 +40,13 @@ namespace TimePlanner.DataAccess.Entities
 
     public string? WeeksCustom { get; set; }
 
+    public string? WeekDaysCustom { get; set; }
+
     public string? DaysCustom { get; set; }
+
+    public int? RepetitionCount { get; set; }
+
+    public int? MaxRepetitionCount { get; set; }
 
     public bool? IsAfterPreviousCompleted { get; set; }
   }

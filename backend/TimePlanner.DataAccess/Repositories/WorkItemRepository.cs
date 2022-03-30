@@ -44,20 +44,7 @@ namespace TimePlanner.DataAccess.Repositories
 
         foreach (var entity in awaken)
         {
-          if (!entity.IsAfterPreviousCompleted.HasValue || !entity.IsAfterPreviousCompleted.Value)
-          {
-            var newEntity = new WorkItemEntity
-            {
-              Category = Category.Scheduled.ToString(),
-              CreatedAt = DateTime.Now,
-              Name = entity.Name,
-              SortOrder = int.MaxValue,
-              NextTime = CalculateNextTime(workItemEntityMapper.ExtractRecurrence(entity))
-            };
-            workItemEntityMapper.CopyRecurrence(entity, newEntity);
-            workItemEntityMapper.CleanUpRecurrence(entity);
-            dbContext.Add(newEntity);
-          }
+          CreateNextRecurrentWorkItemInstance(entity);
           entity.NextTime = null;
           entity.Category = Category.Today.ToString();
         }
@@ -75,6 +62,40 @@ namespace TimePlanner.DataAccess.Repositories
 
         throw new DataAccessException();
       }
+    }
+
+    private void CreateNextRecurrentWorkItemInstance(WorkItemEntity entity)
+    {
+      if (entity.RepetitionCount.HasValue && entity.MaxRepetitionCount.HasValue &&
+          entity.RepetitionCount.Value == entity.MaxRepetitionCount.Value)
+      {
+        // no more repetitions for this work item
+        workItemEntityMapper.CleanUpRecurrence(entity);
+        return;
+      }
+
+      if (entity.IsAfterPreviousCompleted.HasValue && entity.IsAfterPreviousCompleted.Value)
+      {
+        // new item will be created after this one is complete
+        return;
+      }
+
+      // create new item
+      var newEntity = new WorkItemEntity
+      {
+        Category = Category.Scheduled.ToString(),
+        CreatedAt = DateTime.Now,
+        Name = entity.Name,
+        SortOrder = int.MaxValue,
+        NextTime = CalculateNextTime(workItemEntityMapper.ExtractRecurrence(entity))
+      };
+      workItemEntityMapper.CopyRecurrence(entity, newEntity);
+      if (newEntity.RepetitionCount.HasValue)
+      {
+        newEntity.RepetitionCount++;
+      }
+      workItemEntityMapper.CleanUpRecurrence(entity);
+      dbContext.Add(newEntity);
     }
 
     private static List<WorkItemEntity> UpdateArchived(IQueryable<WorkItemEntity> entities)
@@ -134,6 +155,10 @@ namespace TimePlanner.DataAccess.Repositories
             NextTime = CalculateNextTime(workItemEntityMapper.ExtractRecurrence(entity))
           };
           workItemEntityMapper.CopyRecurrence(entity, newEntity);
+          if (newEntity.RepetitionCount.HasValue)
+          {
+            newEntity.RepetitionCount++;
+          }
           workItemEntityMapper.CleanUpRecurrence(entity);
           dbContext.Add(newEntity);
         }
