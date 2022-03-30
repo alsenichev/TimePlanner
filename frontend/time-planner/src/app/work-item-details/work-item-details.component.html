@@ -18,5 +18,5 @@
       <path d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
     </svg>
   </button>
-  <div *ngIf="workItem.category=='Scheduled'" class="m-2" placement="top" ngbTooltip="Next time">{{workItem.nextTime | date: 'dd-MMM-yyy HH:mm'}} </div>
+  <div *ngIf="workItem.category=='Scheduled'" class="m-2" placement="top" ngbTooltip="Next time">{{workItem.nextTime | date: 'dd-MMM-yyy'}} </div>
 </div>

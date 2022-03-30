@@ -45,7 +45,7 @@ export class WorkItemEditorComponent {
 
   onSubmit(){
     let workItemRequest : WorkItemUpdateRequest = {
-      id: this.currentWorkItem!.id,
+      id: this.currentWorkItem.id,
       name: this.workItemForm.value.name,
       recurrence: this.workItemForm.value.recurrence,
       category: this.currentWorkItem.category,

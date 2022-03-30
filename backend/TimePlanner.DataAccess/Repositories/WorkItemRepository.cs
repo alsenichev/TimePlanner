@@ -25,7 +25,7 @@ namespace TimePlanner.DataAccess.Repositories
       var awaken = entities.Where(e =>
           e.Category == Category.Scheduled.ToString() &&
           e.NextTime.HasValue &&
-          e.NextTime.Value <= DateTime.Now)
+          e.NextTime.Value.Date <= DateTime.Now.Date)
         .OrderByDescending(e => e.NextTime.Value).ToList();
 
       if (awaken.Count > 0)
@@ -100,7 +100,7 @@ namespace TimePlanner.DataAccess.Repositories
 
     private static List<WorkItemEntity> UpdateArchived(IQueryable<WorkItemEntity> entities)
     {
-      DateTime archiveThreshold = DateTime.Now.AddDays(-30);
+      DateTime archiveThreshold = DateTime.Now.AddDays(-7);
       var archive = entities.Where(e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreshold.Date)
         .ToList();
       foreach (var entity in archive)

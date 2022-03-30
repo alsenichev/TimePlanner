@@ -1,6 +1,5 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using TimePlanner.Domain.Models;
 using TimePlanner.WebApi.Mappers;
 using TimePlanner.WebApi.Models.Requests;
 using TimePlanner.WebApi.Models.Responses;
