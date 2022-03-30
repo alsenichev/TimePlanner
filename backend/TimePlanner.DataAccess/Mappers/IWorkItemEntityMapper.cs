@@ -10,13 +10,12 @@ namespace TimePlanner.DataAccess.Mappers
 
     SortData MapSortData(WorkItemEntity entity);
 
-    WorkItemEntity Map(WorkItem workItem);
-
-    DurationEntity Map(Guid workItemId, Duration duration);
     Recurrence ExtractRecurrence(WorkItemEntity entity);
 
     void CopyRecurrence(WorkItemEntity source, WorkItemEntity target);
+
     void CleanUpRecurrence(WorkItemEntity entity);
+
     void AssignRecurrence(WorkItemEntity source, Recurrence target);
   }
 }

@@ -73,7 +73,7 @@ namespace TimePlanner.DataAccess.Mappers
       entity.MonthsCustom = null;
       entity.WeeksEveryN = null;
       entity.WeeksCustom = null;
-      entity.DaysEveryN =null;
+      entity.DaysEveryN = null;
       entity.DaysCustom = null;
       entity.IsAfterPreviousCompleted = null;
     }
@@ -126,24 +126,9 @@ namespace TimePlanner.DataAccess.Mappers
         entity.CreatedAt,
         entity.CompletedAt,
         entity.NextTime,
-        JsonSerializer.Serialize(ExtractRecurrence(entity)),
+        entity.IsRecurrent ? JsonSerializer.Serialize(ExtractRecurrence(entity)) : null,
         entity.SortOrder,
         entity.Durations.Select(d => Map(d)).ToList());
-    }
-
-    public WorkItemEntity Map(WorkItem workItem)
-    {
-      return new WorkItemEntity
-      {
-        WorkItemId = workItem.Id ?? Guid.Empty,
-        Name = workItem.Name,
-        Category = workItem.Category.ToString(),
-        CompletedAt = workItem.CompletedAt,
-        CreatedAt = workItem.CreatedAt,
-        Durations = workItem.Durations.Select(d => Map(workItem.Id ?? Guid.Empty, d)).ToList(),
-        NextTime = workItem.NextTime,
-        SortOrder = workItem.SortOrder
-      };
     }
   }
 }
