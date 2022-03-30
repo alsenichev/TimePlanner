@@ -24,25 +24,9 @@ namespace TimePlanner.DataAccess.Entities
 
     public DateTime? CompletedAt { get; set; }
 
-    public bool IsRecurrent { get; set; }
+    public string? Cron { get; set; }
 
-    public int? YearsEveryN { get; set; }
-
-    public int? MonthsEveryN { get; set; }
-
-    public int? WeeksEveryN { get; set; }
-
-    public int? DaysEveryN { get; set; }
-
-    public string? YearsCustom { get; set; }
-
-    public string? MonthsCustom { get; set; }
-
-    public string? WeeksCustom { get; set; }
-
-    public string? WeekDaysCustom { get; set; }
-
-    public string? DaysCustom { get; set; }
+    public DateTime? RepetitionStartDate { get; set; }
 
     public int? RepetitionCount { get; set; }
 

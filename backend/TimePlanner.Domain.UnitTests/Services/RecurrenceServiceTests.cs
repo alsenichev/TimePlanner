@@ -13,35 +13,6 @@ namespace TimePlanner.Domain.UnitTests.Services
     private RecurrenceService recurrenceService;
     private Mock<ITimeProvider> timeProviderMock;
 
-    private Recurrence CreateRecurrence(
-      int? YearsEveryN = null,
-      List<int>? YearsCustom = null,
-      int? MonthsEveryN = null,
-      List<int>? MonthsCustom = null,
-      int? WeeksEveryN = null,
-      List<int>? WeeksCustom = null,
-      List<int>? WeekDaysCustom = null,
-      int? DaysEveryN = null,
-      List<int>? DaysCustom = null,
-      int? RepetitionCount = null,
-      int? MaxRepetitionCount = null,
-      bool? IsAfterPreviousCompleted = null)
-    {
-      return new Recurrence(
-        Guid.NewGuid(),
-        YearsEveryN,
-        YearsCustom,
-        MonthsEveryN,
-        MonthsCustom,
-        WeeksEveryN,
-        WeeksCustom,
-        WeekDaysCustom,
-        DaysEveryN,
-        DaysCustom,
-        RepetitionCount,
-        MaxRepetitionCount,
-        IsAfterPreviousCompleted);
-    }
 
     [SetUp]
     public void SetUp()
@@ -55,7 +26,7 @@ namespace TimePlanner.Domain.UnitTests.Services
     [Test]
     public void TestEveryDay()
     {
-      var rec = CreateRecurrence(DaysEveryN: 1);
+      var rec = new Recurrence(Guid.NewGuid(), baseDate, "", null, null, null);
       Assert.AreEqual(baseDate.AddDays(1), recurrenceService.CalculateNextTime(rec));
     }
   }

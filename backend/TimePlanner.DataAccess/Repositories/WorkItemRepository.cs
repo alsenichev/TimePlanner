@@ -125,7 +125,7 @@ namespace TimePlanner.DataAccess.Repositories
       if (targetCategory == Category.Completed)
       {
         entity.CompletedAt = DateTime.Now;
-        if (entity.IsRecurrent)
+        if (entity.RepetitionStartDate.HasValue)
         {
           var newEntity = new WorkItemEntity
           {
@@ -164,7 +164,7 @@ namespace TimePlanner.DataAccess.Repositories
 
     private void UpdateRecurrence(IQueryable<WorkItemEntity> entities, WorkItemEntity entity, string recurrence)
     {
-      if (!entity.IsRecurrent)
+      if (!entity.RepetitionStartDate.HasValue)
       {
         // assign recurrence
         Recurrence targetRecurrence = JsonSerializer.Deserialize<Recurrence>(recurrence);
@@ -322,7 +322,7 @@ namespace TimePlanner.DataAccess.Repositories
       {
         UpdateCategory(entities, entity, targetCategory);
       }
-      else if (entity.IsRecurrent || !string.IsNullOrEmpty(recurrence))
+      else if (entity.RepetitionStartDate.HasValue || !string.IsNullOrEmpty(recurrence))
       {
         UpdateRecurrence(entities, entity, recurrence);
       }
