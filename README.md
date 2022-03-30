@@ -1,5 +1,5 @@
 # Introduction 
-This is a replacement of the Maxdone web service shich has been discontinued.
+This is a replacement of the Maxdone web service which has been discontinued.
 
 # Getting Started
 The authentication is not implemented and the release version is not deployed anywhere. Maybe I'll do it in the future. The only possible way to deploy this application is to install it as a Windows service locally.
