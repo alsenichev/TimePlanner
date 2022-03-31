@@ -24,9 +24,9 @@ namespace TimePlanner.DataAccess.Entities
 
     public DateTime? CompletedAt { get; set; }
 
-    public string? Cron { get; set; }
+    public string? CronExpression { get; set; }
 
-    public DateTime? RepetitionStartDate { get; set; }
+    public DateTime? RecurrenceStartsFrom { get; set; }
 
     public int? RepetitionCount { get; set; }
 

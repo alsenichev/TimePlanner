@@ -1,6 +1,5 @@
-﻿using Moq;
+﻿using System.Globalization;
 using NUnit.Framework;
-using TimePlanner.Domain.Interfaces;
 using TimePlanner.Domain.Models;
 using TimePlanner.Domain.Services;
 
@@ -8,26 +7,36 @@ namespace TimePlanner.Domain.UnitTests.Services
 {
   public class RecurrenceServiceTests
   {
-    private static readonly DateTime baseDate = new DateTime(2022, 05, 10, 14, 05, 16);
-
     private RecurrenceService recurrenceService;
-    private Mock<ITimeProvider> timeProviderMock;
-
+    // MINUTES HOURS DAYS MONTHS DAYS-OF-WEEK
+    const string TimeFormat = "dd/MM/yyyy HH:mm";
+    static string TimeString(DateTime time) => time.ToString(TimeFormat, CultureInfo.InvariantCulture);
+    static DateTime Time(string str) => DateTime.ParseExact(str, TimeFormat, CultureInfo.InvariantCulture);
 
     [SetUp]
     public void SetUp()
     {
-      timeProviderMock = new Mock<ITimeProvider>();
-      timeProviderMock.Setup(m => m.Now).Returns(baseDate);
-      recurrenceService = new RecurrenceService(timeProviderMock.Object);
+      recurrenceService = new RecurrenceService();
     }
 
+    [TestCase("every sunday", "31/03/2022 14:30", "0 0 * * 0", "03/04/2022 00:00")]
+    [TestCase("every saturday", "31/03/2022 01:05", "0 0 * * 6", "02/04/2022 00:00")]
+    [TestCase("every monday", "31/03/2022 01:05", "0 0 * * 1", "04/04/2022 00:00")]
+    public void TestDays(string testName, string baseTime, string cron, string expected)
+    {
+      DateTime? next = recurrenceService.CalculateNextTime(cron, Time(baseTime));
+      Assert.IsTrue(next.HasValue);
+      Assert.AreEqual(expected, TimeString(next.Value));
+    }
 
     [Test]
-    public void TestEveryDay()
+    public void TestMonths()
     {
-      var rec = new Recurrence(Guid.NewGuid(), baseDate, "", null, null, null);
-      Assert.AreEqual(baseDate.AddDays(1), recurrenceService.CalculateNextTime(rec));
+    }
+
+    [Test]
+    public void TestWeekDays()
+    {
     }
   }
 }

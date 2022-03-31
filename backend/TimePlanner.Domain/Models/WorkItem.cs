@@ -10,7 +10,11 @@
     DateTime CreatedAt,
     DateTime? CompletedAt,
     DateTime? NextTime,
-    string? Recurrence,
+    string? CronExpression,
+    DateTime? RecurrenceStartsFrom,
+    bool? IsAfterPreviousCompleted,
+    int? MaxRepetitionCount,
+    int? RepetitionCount,
     int SortOrder,
     List<Duration> Durations);
 

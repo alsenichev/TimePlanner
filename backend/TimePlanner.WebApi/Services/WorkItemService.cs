@@ -30,12 +30,21 @@ public class WorkItemService : IWorkItemService
 
   public Task<WorkItem> UpdateWorkItemAsync(UpdateWorkItemRequest workItemRequest)
   {
+    if (workItemRequest.UpdateRecurrence)
+    {
+      return workItemRepository.UpdateRecurrence(
+        workItemRequest.Id,
+        workItemRequest.CronExpression,
+        workItemRequest.IsAfterPreviousCompleted,
+        workItemRequest.RecurrenceStartsFrom,
+        workItemRequest.MaxRepetitionsCount);
+    }
+
     return workItemRepository.UpdateWorkItemAsync(
       workItemRequest.Id,
       workItemRequest.Name,
       Enum.Parse<Category>(workItemRequest.Category),
-      workItemRequest.SortOrder,
-      workItemRequest.Recurrence);
+      workItemRequest.SortOrder);
   }
 
   public Task DeleteWorkItemAsync(Guid workItemId)

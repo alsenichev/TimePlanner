@@ -1,8 +1,6 @@
-﻿using System.Text.Json;
-using TimePlanner.DataAccess.Entities;
+﻿using TimePlanner.DataAccess.Entities;
 using TimePlanner.Domain.Models;
 using TimePlanner.Domain.Services;
-using TimePlanner.Domain.Utils;
 
 namespace TimePlanner.DataAccess.Mappers
 {
@@ -36,21 +34,10 @@ namespace TimePlanner.DataAccess.Mappers
       };
     }
 
-    public Recurrence ExtractRecurrence(WorkItemEntity entity)
-    {
-      return new Recurrence(
-        entity.WorkItemId,
-        entity.RepetitionStartDate,
-        entity.Cron,
-        entity.RepetitionCount,
-        entity.MaxRepetitionCount,
-        entity.IsAfterPreviousCompleted);
-    }
-
     public void CopyRecurrence(WorkItemEntity source, WorkItemEntity target)
     {
-      target.Cron = source.Cron;
-      target.RepetitionStartDate = source.RepetitionStartDate;
+      target.CronExpression = source.CronExpression;
+      target.RecurrenceStartsFrom = source.RecurrenceStartsFrom;
       target.RepetitionCount = source.RepetitionCount;
       target.MaxRepetitionCount = source.MaxRepetitionCount;
       target.IsAfterPreviousCompleted = source.IsAfterPreviousCompleted;
@@ -58,20 +45,24 @@ namespace TimePlanner.DataAccess.Mappers
 
     public void CleanUpRecurrence(WorkItemEntity entity)
     {
-      entity.Cron = null;
-      entity.RepetitionStartDate = null;
+      entity.CronExpression = null;
+      entity.RecurrenceStartsFrom = null;
       entity.RepetitionCount = null;
       entity.MaxRepetitionCount = null;
       entity.IsAfterPreviousCompleted = null;
     }
 
-    public void AssignRecurrence(WorkItemEntity entity, Recurrence model)
+    public void AssignRecurrence(
+      WorkItemEntity entity,
+      string cronExpression,
+      bool? isAfterPreviousCompleted,
+      DateTime? recurrenceStartsFrom,
+      int? maxRepetitionsCount)
     {
-      entity.Cron = model.Cron;
-      entity.RepetitionStartDate = model.RepetitionStartDate;
-      entity.RepetitionCount = model.RepetitionCount;
-      entity.MaxRepetitionCount = model.MaxRepetitionCount;
-      entity.IsAfterPreviousCompleted = model.IsAfterPreviousCompleted;
+      entity.CronExpression = cronExpression;
+      entity.RecurrenceStartsFrom = recurrenceStartsFrom;
+      entity.MaxRepetitionCount = maxRepetitionsCount;
+      entity.IsAfterPreviousCompleted = isAfterPreviousCompleted;
     }
 
     public SortData MapSortData(WorkItemEntity entity)
@@ -88,7 +79,11 @@ namespace TimePlanner.DataAccess.Mappers
         entity.CreatedAt,
         entity.CompletedAt,
         entity.NextTime,
-        entity.RepetitionStartDate.HasValue ? JsonSerializer.Serialize(ExtractRecurrence(entity)) : null,
+        entity.CronExpression,
+        entity.RecurrenceStartsFrom,
+        entity.IsAfterPreviousCompleted,
+        entity.MaxRepetitionCount,
+        entity.RepetitionCount,
         entity.SortOrder,
         entity.Durations.Select(d => Map(d)).ToList());
     }

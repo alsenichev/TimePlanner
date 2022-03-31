@@ -4,6 +4,6 @@ namespace TimePlanner.Domain.Interfaces
 {
   public interface IRecurrenceService
   {
-    DateTime CalculateNextTime(Recurrence recurrence);
+    DateTime? CalculateNextTime(string cronExpression, DateTime relativeTo);
   }
 }
