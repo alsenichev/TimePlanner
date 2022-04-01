@@ -6,14 +6,18 @@ namespace TimePlanner.Domain.UnitTests.Services
 {
   public class RecurrenceServiceTests
   {
-    private RecurrenceService recurrenceService;
     const string TimeFormat = "dd/MM/yyyy HH:mm";
-    static string TimeString(DateTime time) => time.ToString(TimeFormat, CultureInfo.InvariantCulture);
-    static DateTime Time(string str) => DateTime.ParseExact(str, TimeFormat, CultureInfo.InvariantCulture);
 
-    private void RunTest(string relateveTo, string cronExpression, string expected)
+    private RecurrenceService recurrenceService;
+
+    private static string TimeString(DateTime time) =>
+      time.ToString(TimeFormat, CultureInfo.InvariantCulture);
+    private static DateTime Time(string str) =>
+      DateTime.ParseExact(str, TimeFormat, CultureInfo.InvariantCulture);
+    
+    private void RunTest(string relativeTo, string cronExpression, string expected)
     {
-      DateTime? next = recurrenceService.CalculateNextTime(cronExpression, Time(relateveTo));
+      DateTime? next = recurrenceService.CalculateNextTime(cronExpression, Time(relativeTo));
       Assert.IsTrue(next.HasValue);
       Assert.AreEqual(expected, TimeString(next.Value));
     }
