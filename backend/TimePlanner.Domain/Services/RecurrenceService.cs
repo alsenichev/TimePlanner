@@ -1,6 +1,5 @@
 ﻿using Cronos;
 using TimePlanner.Domain.Interfaces;
-using TimePlanner.Domain.Models;
 
 namespace TimePlanner.Domain.Services
 {
@@ -10,9 +9,9 @@ namespace TimePlanner.Domain.Services
     {
       try
       {
-        CronExpression expression = CronExpression.Parse(cronExpression);
-        DateTimeOffset? next = expression.GetNextOccurrence(relativeTo.ToUniversalTime());
-        return next?.DateTime; ;
+        var expression = CronExpression.Parse(cronExpression);
+        var next = expression.GetNextOccurrence(new DateTimeOffset(relativeTo), TimeZoneInfo.Local);
+        return next?.DateTime;
       }
       catch (CronFormatException)
       {
