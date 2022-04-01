@@ -45,7 +45,7 @@ namespace TimePlanner.DataAccess.Repositories
 
         foreach (var entity in awaken)
         {
-          if (!entity.IsAfterPreviousCompleted.HasValue && !entity.IsAfterPreviousCompleted.Value)
+          if (!entity.IsAfterPreviousCompleted.HasValue || !entity.IsAfterPreviousCompleted.Value)
           {
             CreateNextRecurrentWorkItemInstance(entity);
           }
@@ -86,7 +86,7 @@ namespace TimePlanner.DataAccess.Repositories
         Name = entity.Name,
         SortOrder = int.MaxValue,
         NextTime = recurrenceService.CalculateNextTime(
-          entity.CronExpression?? string.Empty, entity.RecurrenceStartsFrom?? DateTime.Now)
+          entity.CronExpression!, entity.RecurrenceStartsFrom?? DateTime.Now)
       };
       workItemEntityMapper.CopyRecurrence(entity, newEntity);
       if (newEntity.RepetitionCount.HasValue)
