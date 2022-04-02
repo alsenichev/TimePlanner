@@ -13,12 +13,18 @@ namespace TimePlanner.Domain.UnitTests.Services
     private static string TimeString(DateTime time) =>
       time.ToString(TimeFormat, CultureInfo.InvariantCulture);
 
-    private static DateTime Time(string str) =>
-      DateTime.ParseExact(str, TimeFormat, CultureInfo.InvariantCulture);
-    
-    private void RunTest(string relativeTo, string cronExpression, string expected)
+    private static DateTime? Time(string str)
     {
-      DateTime? next = recurrenceService.CalculateNextTime(cronExpression, null, Time(relativeTo));
+      if (string.IsNullOrEmpty(str))
+      {
+        return null;
+      }
+      return DateTime.ParseExact(str, TimeFormat, CultureInfo.InvariantCulture);
+    }
+    
+    private void RunTest(string relativeTo, string cronExpression, string expected, string lastFiredAt = null)
+    {
+      DateTime? next = recurrenceService.CalculateNextTime(cronExpression, Time(lastFiredAt), Time(relativeTo).Value);
       Assert.IsTrue(next.HasValue);
       Assert.AreEqual(expected, TimeString(next.Value));
     }
@@ -222,6 +228,23 @@ namespace TimePlanner.Domain.UnitTests.Services
     public void TestFiniteOccurrences(string relativeTo, string cronExpression, string expected)
     {
       RunTest(relativeTo, cronExpression, expected);
+    }
+
+    [TestCase("04/04/2022 14:42", "04/04/2022 14:42", "daysAfterCompletion: 2", "06/04/2022 14:42")]
+    [TestCase("01/01/2000 14:42", "04/04/2022 14:42", "daysAfterCompletion: 2", "06/04/2022 14:42")]
+    [TestCase("04/04/2023 14:42", "04/04/2022 14:42", "daysAfterCompletion: 2", "06/04/2022 14:42")]
+    public void TestDaysAfterCompletion(
+      string relativeTo, string lastFiredAt, string customCronExpression, string expected)
+    {
+      RunTest(relativeTo, customCronExpression, expected, lastFiredAt);
+    }
+
+    [TestCase("daysAfterCompletion: 0")]
+    [TestCase("daysAfterCompletion: 366")]
+    public void TestInvalidDaysAfterCompletion(string customCronExpression)
+    {
+      Assert.Throws<ApplicationException>(
+        () => recurrenceService.CalculateNextTime(customCronExpression, DateTime.Now, DateTime.Now));
     }
   }
 }
