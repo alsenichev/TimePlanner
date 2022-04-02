@@ -22,10 +22,11 @@ internal class WorkItemResponseMapper : IWorkItemResponseMapper
       Name = workItem.Name,
       SortOrder = workItem.SortOrder,
       CronExpression = workItem.CronExpression,
-      IsAfterPreviousCompleted = workItem.IsAfterPreviousCompleted,
+      IsIfPreviousCompleted = workItem.IsIfPreviousCompleted,
       MaxRepetitionCount = workItem.MaxRepetitionCount,
-      RecurrenceStartsFrom = workItem.RecurrenceStartsFrom,
-      RepetitionCount = workItem.RepetitionCount,
+      RecurrenceStartsOn = workItem.RecurrenceStartsOn,
+      RecurrenceEndsOn = workItem.RecurrenceEndsOn,
+      IsOnPause = workItem.IsOnPause,
       NextTime = workItem.NextTime
     };
   }

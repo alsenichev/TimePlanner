@@ -6,32 +6,42 @@ namespace TimePlanner.DataAccess.Entities
   [Table("WorkItems")]
   public class WorkItemEntity
   {
+    #region base properties
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public Guid WorkItemId { get; set; }
 
     public string Name { get; set; } = null!;
 
-    public List<DurationEntity>? Durations { get; set; }
-
     public string Category { get; set; } = null!;
 
     public int SortOrder { get; set; }
 
-    public DateTime? NextTime { get; set; }
-
     public DateTime CreatedAt { get; set; }
 
     public DateTime? CompletedAt { get; set; }
+    #endregion
 
+    #region recurrence
     public string? CronExpression { get; set; }
 
-    public DateTime? RecurrenceStartsFrom { get; set; }
+    public DateTime? RecurrenceStartsOn { get; set; }
 
-    public int? RepetitionCount { get; set; }
+    public DateTime? RecurrenceEndsOn { get; set; }
 
-    public int? MaxRepetitionCount { get; set; }
+    public int? RepetitionsCount { get; set; }
 
-    public bool? IsAfterPreviousCompleted { get; set; }
+    public int? MaxRepetitionsCount { get; set; }
+
+    public bool? IsIfPreviousCompleted { get; set; }
+
+    public bool ? IsOnPause { get; set; }
+
+    public DateTime? NextTime { get; set; }
+    #endregion
+
+    #region durations
+    public List<DurationEntity>? Durations { get; set; }
+    #endregion
   }
 }

@@ -18,7 +18,7 @@ namespace TimePlanner.Domain.UnitTests.Services
     
     private void RunTest(string relativeTo, string cronExpression, string expected)
     {
-      DateTime? next = recurrenceService.CalculateNextTime(cronExpression, Time(relativeTo));
+      DateTime? next = recurrenceService.CalculateNextTime(cronExpression, null, Time(relativeTo));
       Assert.IsTrue(next.HasValue);
       Assert.AreEqual(expected, TimeString(next.Value));
     }

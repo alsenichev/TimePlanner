@@ -20,13 +20,15 @@ namespace TimePlanner.WebApi.Models.Responses
 
     public string? CronExpression { get; set; }
 
-    public DateTime? RecurrenceStartsFrom { get; set; }
+    public DateTime? RecurrenceStartsOn { get; set; }
 
-    public int? RepetitionCount { get; set; }
+    public DateTime? RecurrenceEndsOn { get; set; }
 
     public int? MaxRepetitionCount { get; set; }
 
-    public bool? IsAfterPreviousCompleted { get; set; }
+    public bool? IsIfPreviousCompleted { get; set; }
+
+    public bool? IsOnPause { get; set; }
 
     public int SortOrder { get; set; }
 

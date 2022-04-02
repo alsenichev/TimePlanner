@@ -17,8 +17,10 @@ namespace TimePlanner.DataAccess.Mappers
     void AssignRecurrence(
       WorkItemEntity source,
       string cronExpression,
+      DateTime? recurrenceStartsOn,
+      DateTime? recurrenceEndsOn,
       bool? isAfterPreviousCompleted,
-      DateTime? recurrenceStartsFrom,
-      int? maxRepetitionsCount);
+      int? maxRepetitionsCount,
+      bool? isOnPause);
   }
 }

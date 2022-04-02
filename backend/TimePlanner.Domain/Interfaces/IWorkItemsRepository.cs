@@ -19,9 +19,11 @@ namespace TimePlanner.Domain.Interfaces
     Task<WorkItem> UpdateRecurrence(
       Guid workItemId,
       string? cronExpression,
+      DateTime? recurrenceStartsOn,
+      DateTime? recurrenceEndsOn,
       bool? isAfterPreviousCompleted,
-      DateTime? recurrenceStartsFrom,
-      int? maxRepetitionsCount);
+      int? maxRepetitionsCount,
+      bool? isOnPause);
 
     Task DeleteWorkItemAsync(Guid workItemId);
   }

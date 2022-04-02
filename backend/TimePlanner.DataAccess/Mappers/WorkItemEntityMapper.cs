@@ -37,32 +37,39 @@ namespace TimePlanner.DataAccess.Mappers
     public void CopyRecurrence(WorkItemEntity source, WorkItemEntity target)
     {
       target.CronExpression = source.CronExpression;
-      target.RecurrenceStartsFrom = source.RecurrenceStartsFrom;
-      target.RepetitionCount = source.RepetitionCount;
-      target.MaxRepetitionCount = source.MaxRepetitionCount;
-      target.IsAfterPreviousCompleted = source.IsAfterPreviousCompleted;
+      target.RecurrenceStartsOn = source.RecurrenceStartsOn;
+      target.RecurrenceEndsOn = source.RecurrenceEndsOn;
+      target.RepetitionsCount = source.RepetitionsCount;
+      target.MaxRepetitionsCount = source.MaxRepetitionsCount;
+      target.IsIfPreviousCompleted = source.IsIfPreviousCompleted;
     }
 
     public void CleanUpRecurrence(WorkItemEntity entity)
     {
       entity.CronExpression = null;
-      entity.RecurrenceStartsFrom = null;
-      entity.RepetitionCount = null;
-      entity.MaxRepetitionCount = null;
-      entity.IsAfterPreviousCompleted = null;
+      entity.RecurrenceStartsOn = null;
+      entity.RecurrenceEndsOn= null;
+      entity.RepetitionsCount = null;
+      entity.MaxRepetitionsCount = null;
+      entity.IsIfPreviousCompleted = null;
+      entity.IsOnPause = null;
     }
 
     public void AssignRecurrence(
       WorkItemEntity entity,
       string cronExpression,
+      DateTime? recurrenceStartsOn,
+      DateTime? recurrenceEndsOn,
       bool? isAfterPreviousCompleted,
-      DateTime? recurrenceStartsFrom,
-      int? maxRepetitionsCount)
+      int? maxRepetitionsCount,
+      bool? isOnPause)
     {
       entity.CronExpression = cronExpression;
-      entity.RecurrenceStartsFrom = recurrenceStartsFrom;
-      entity.MaxRepetitionCount = maxRepetitionsCount;
-      entity.IsAfterPreviousCompleted = isAfterPreviousCompleted;
+      entity.RecurrenceStartsOn = recurrenceStartsOn;
+      entity.RecurrenceEndsOn = recurrenceEndsOn;
+      entity.MaxRepetitionsCount = maxRepetitionsCount;
+      entity.IsIfPreviousCompleted = isAfterPreviousCompleted;
+      entity.IsOnPause = isOnPause;
     }
 
     public SortData MapSortData(WorkItemEntity entity)
@@ -80,10 +87,11 @@ namespace TimePlanner.DataAccess.Mappers
         entity.CompletedAt,
         entity.NextTime,
         entity.CronExpression,
-        entity.RecurrenceStartsFrom,
-        entity.IsAfterPreviousCompleted,
-        entity.MaxRepetitionCount,
-        entity.RepetitionCount,
+        entity.RecurrenceStartsOn,
+        entity.RecurrenceEndsOn,
+        entity.IsIfPreviousCompleted,
+        entity.MaxRepetitionsCount,
+        entity.IsOnPause,
         entity.SortOrder,
         entity.Durations.Select(d => Map(d)).ToList());
     }

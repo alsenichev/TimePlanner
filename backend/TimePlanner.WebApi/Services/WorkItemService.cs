@@ -35,9 +35,11 @@ public class WorkItemService : IWorkItemService
       return workItemRepository.UpdateRecurrence(
         workItemRequest.Id,
         workItemRequest.CronExpression,
+        workItemRequest.RecurrenceStartsOn,
+        workItemRequest.RecurrenceEndsOn,
         workItemRequest.IsAfterPreviousCompleted,
-        workItemRequest.RecurrenceStartsFrom,
-        workItemRequest.MaxRepetitionsCount);
+        workItemRequest.MaxRepetitionsCount,
+        workItemRequest.IsOnPause);
     }
 
     return workItemRepository.UpdateWorkItemAsync(

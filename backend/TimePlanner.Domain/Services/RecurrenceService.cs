@@ -3,9 +3,9 @@ using TimePlanner.Domain.Interfaces;
 
 namespace TimePlanner.Domain.Services
 {
-  public class RecurrenceService : IRecurrenceService
+  public class RecurrenceService :  IRecurrenceService
   {
-    public DateTime? CalculateNextTime(string cronExpression, DateTime relativeTo)
+    public DateTime? CalculateNextTime(string cronExpression, DateTime? lastFiredAt, DateTime relativeTo)
     {
       try
       {
