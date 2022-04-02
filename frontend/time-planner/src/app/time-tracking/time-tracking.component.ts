@@ -104,7 +104,9 @@ export class TimeTrackingComponent implements OnInit {
       cronExpression: workItem.cronExpression,
       isAfterPreviousCompleted: workItem.isAfterPreviousCompleted,
       maxRepetetionsCount: workItem.maxRepetetionsCount,
-      recurrenceStartsFrom: workItem.recurrenceStartsFrom
+      recurrenceStartsOn: workItem.recurrenceStartsOn,
+      recurrenceEndsOn: workItem.recurrenceEndsOn,
+      isOnPause: workItem.isOnPause
     }
     this.timeTrackingService.updateWorkItem(request).subscribe(wi=>{
       this.loadWorkItems();

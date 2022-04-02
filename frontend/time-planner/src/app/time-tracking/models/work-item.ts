@@ -5,9 +5,11 @@ export interface WorkItem{
   category: string,
   nextTime: string | undefined,
   cronExpression: string | undefined,
-  recurrenceStartsFrom: string | undefined,
+  recurrenceStartsOn: string | undefined,
+  recurrenceEndsOn: string | undefined,
   isAfterPreviousCompleted: boolean | undefined,
   maxRepetetionsCount: number | undefined,
+  isOnPause: boolean | undefined,
   sortOrder: number,
   completedAt: string | undefined
 }
@@ -21,10 +23,12 @@ export interface WorkItemUpdateRequest{
   id: string,
   name: string,
   category: string,
-  updateRecurrence: boolean
+  updateRecurrence: boolean,
   cronExpression: string | undefined,
-  recurrenceStartsFrom: string | undefined,
+  recurrenceStartsOn: string | undefined,
+  recurrenceEndsOn: string | undefined,
   isAfterPreviousCompleted: boolean | undefined,
   maxRepetetionsCount: number | undefined,
+  isOnPause: boolean | undefined,
   sortOrder: number
 }

@@ -53,8 +53,10 @@ export class WorkItemEditorComponent {
       cronExpression: this.workItemForm.value.cronExpression,
       isAfterPreviousCompleted: this.workItemForm.value.isAfterPreviousCompleted,
       maxRepetetionsCount: undefined,
-      recurrenceStartsFrom: undefined,
+      recurrenceStartsOn: undefined,
+      recurrenceEndsOn: undefined,
       category: this.currentWorkItem.category,
+      isOnPause: undefined,
       sortOrder: this.currentWorkItem.sortOrder,
     };
     this.formVisible = false;

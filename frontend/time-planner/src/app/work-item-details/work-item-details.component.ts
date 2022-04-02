@@ -42,7 +42,9 @@ export class WorkItemDetailsComponent {
       cronExpression: this._workItem.cronExpression,
       isAfterPreviousCompleted: this._workItem.isAfterPreviousCompleted,
       maxRepetetionsCount: this._workItem.maxRepetetionsCount,
-      recurrenceStartsFrom: this._workItem.recurrenceStartsFrom,
+      recurrenceStartsOn: this._workItem.recurrenceStartsOn,
+      recurrenceEndsOn: this._workItem.recurrenceEndsOn,
+      isOnPause: this._workItem.isOnPause,
       category: this._workItem.category,
       sortOrder: this._workItem.sortOrder,
     };
