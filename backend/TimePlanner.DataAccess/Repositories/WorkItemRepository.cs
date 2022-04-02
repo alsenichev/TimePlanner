@@ -26,7 +26,7 @@ namespace TimePlanner.DataAccess.Repositories
       var awaken = entities.Where(e =>
           e.Category == Category.Scheduled.ToString() &&
           e.NextTime.HasValue &&
-          e.NextTime.Value.Date <= DateTime.Now.Date)
+          e.NextTime.Value < DateTime.Now)
         .OrderByDescending(e => e.NextTime.Value).ToList();
 
       if (awaken.Count > 0)
@@ -77,7 +77,6 @@ namespace TimePlanner.DataAccess.Repositories
         workItemEntityMapper.CleanUpRecurrence(entity);
         return;
       }
-
       // create new item
       var newEntity = new WorkItemEntity
       {
@@ -86,10 +85,10 @@ namespace TimePlanner.DataAccess.Repositories
         Name = entity.Name,
         SortOrder = int.MaxValue,
         NextTime = recurrenceService.CalculateNextTime(
-          entity.CronExpression!, entity.RecurrenceStartsFrom?? DateTime.Now)
+          entity.CronExpression!, DateTime.Now)
       };
       workItemEntityMapper.CopyRecurrence(entity, newEntity);
-      if (newEntity.RepetitionCount.HasValue)
+      if (newEntity.MaxRepetitionCount.HasValue)
       {
         newEntity.RepetitionCount++;
       }

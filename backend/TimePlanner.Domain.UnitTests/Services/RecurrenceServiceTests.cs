@@ -12,6 +12,7 @@ namespace TimePlanner.Domain.UnitTests.Services
 
     private static string TimeString(DateTime time) =>
       time.ToString(TimeFormat, CultureInfo.InvariantCulture);
+
     private static DateTime Time(string str) =>
       DateTime.ParseExact(str, TimeFormat, CultureInfo.InvariantCulture);
     

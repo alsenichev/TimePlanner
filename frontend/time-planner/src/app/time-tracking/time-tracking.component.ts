@@ -38,7 +38,7 @@ export class TimeTrackingComponent implements OnInit {
     this.completedWorkItems = items.filter(i => i.category == 'Completed');
     this.completedWorkItems.sort((i,j) => Date.parse(j.completedAt!) - Date.parse(i.completedAt!));
     this.scheduledWorkItems = items.filter(i => i.category == 'Scheduled');
-    this.scheduledWorkItems.sort((i,j) => Date.parse(j.nextTime!) - Date.parse(i.nextTime!));
+    this.scheduledWorkItems.sort((i,j) => Date.parse(i.nextTime!) - Date.parse(j.nextTime!));
 
   }
 
@@ -99,8 +99,12 @@ export class TimeTrackingComponent implements OnInit {
       id: workItem.id,
       category: workItem.category,
       name: workItem.name,
-      recurrence: workItem.recurrence,
-      sortOrder: workItem.sortOrder + diff
+      sortOrder: workItem.sortOrder + diff,
+      updateRecurrence: false,
+      cronExpression: workItem.cronExpression,
+      isAfterPreviousCompleted: workItem.isAfterPreviousCompleted,
+      maxRepetetionsCount: workItem.maxRepetetionsCount,
+      recurrenceStartsFrom: workItem.recurrenceStartsFrom
     }
     this.timeTrackingService.updateWorkItem(request).subscribe(wi=>{
       this.loadWorkItems();

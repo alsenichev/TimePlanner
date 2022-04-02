@@ -18,7 +18,8 @@ export class WorkItemEditorComponent {
     if(workItem != undefined){
       this.workItemForm.patchValue({
         name: workItem.name,
-        recurrence: workItem.recurrence
+        cronExpression: workItem.cronExpression,
+        isAfterPreviousCompleted: workItem.isAfterPreviousCompleted
       });
       this._currentWorkItem = workItem;
       this.formVisible = true;
@@ -31,7 +32,8 @@ export class WorkItemEditorComponent {
 
   workItemForm = this.fb.group({
     name: ['', Validators.required],
-    recurrence: ['']
+    cronExpression: [''],
+    isAfterPreviousCompleted: ['']
   });
 
   cancel(){
@@ -47,7 +49,11 @@ export class WorkItemEditorComponent {
     let workItemRequest : WorkItemUpdateRequest = {
       id: this.currentWorkItem.id,
       name: this.workItemForm.value.name,
-      recurrence: this.workItemForm.value.recurrence,
+      updateRecurrence: this.workItemForm.value.cronExpression != undefined,
+      cronExpression: this.workItemForm.value.cronExpression,
+      isAfterPreviousCompleted: this.workItemForm.value.isAfterPreviousCompleted,
+      maxRepetetionsCount: undefined,
+      recurrenceStartsFrom: undefined,
       category: this.currentWorkItem.category,
       sortOrder: this.currentWorkItem.sortOrder,
     };
