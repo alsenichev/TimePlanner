@@ -26,7 +26,7 @@ namespace TimePlanner.WebApi.Models.Responses
 
     public int? MaxRepetitionCount { get; set; }
 
-    public bool? IsIfPreviousCompleted { get; set; }
+    public bool? IsAfterPreviousCompleted { get; set; }
 
     public bool? IsOnPause { get; set; }
 

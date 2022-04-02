@@ -339,8 +339,6 @@ namespace TimePlanner.DataAccess.Repositories
         }
         else
         {
-          entity.NextTime = recurrenceService.CalculateNextTime(cronExpression, null, baseDate);
-
           dbContext.Update(entity);
         }
       }

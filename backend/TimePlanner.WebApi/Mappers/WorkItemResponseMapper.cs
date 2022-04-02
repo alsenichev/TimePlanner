@@ -22,7 +22,7 @@ internal class WorkItemResponseMapper : IWorkItemResponseMapper
       Name = workItem.Name,
       SortOrder = workItem.SortOrder,
       CronExpression = workItem.CronExpression,
-      IsIfPreviousCompleted = workItem.IsIfPreviousCompleted,
+      IsAfterPreviousCompleted = workItem.IsIfPreviousCompleted,
       MaxRepetitionCount = workItem.MaxRepetitionCount,
       RecurrenceStartsOn = workItem.RecurrenceStartsOn,
       RecurrenceEndsOn = workItem.RecurrenceEndsOn,

@@ -231,6 +231,7 @@ namespace TimePlanner.Domain.UnitTests.Services
     }
 
     [TestCase("04/04/2022 14:42", "04/04/2022 14:42", "daysAfterCompletion: 2", "06/04/2022 14:42")]
+    [TestCase("04/04/2022 14:42", "04/04/2022 14:42", "daysAfterCompletion: 42", "16/05/2022 14:42")]
     [TestCase("01/01/2000 14:42", "04/04/2022 14:42", "daysAfterCompletion: 2", "06/04/2022 14:42")]
     [TestCase("04/04/2023 14:42", "04/04/2022 14:42", "daysAfterCompletion: 2", "06/04/2022 14:42")]
     public void TestDaysAfterCompletion(
