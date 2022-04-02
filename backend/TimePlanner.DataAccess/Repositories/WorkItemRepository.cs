@@ -79,7 +79,7 @@ namespace TimePlanner.DataAccess.Repositories
         CreatedAt = DateTime.Now,
         Name = entity.Name,
         SortOrder = int.MaxValue,
-        NextTime = recurrenceService.CalculateNextTime(entity.CronExpression!, entity.NextTime, DateTime.Now)
+        NextTime = recurrenceService.CalculateNextTime(entity.CronExpression!, DateTime.Now, DateTime.Now)
       };
       workItemEntityMapper.CopyRecurrence(entity, newEntity);
       if (newEntity.MaxRepetitionsCount.HasValue)
@@ -314,6 +314,8 @@ namespace TimePlanner.DataAccess.Repositories
       else
       {
         bool isCreating = string.IsNullOrEmpty(entity.CronExpression);
+        recurrenceStartsOn = recurrenceStartsOn.HasValue ? recurrenceStartsOn : DateTime.Now;
+
         workItemEntityMapper.AssignRecurrence(
           entity,
           cronExpression,
@@ -323,11 +325,10 @@ namespace TimePlanner.DataAccess.Repositories
           maxRepetitionsCount,
           isOnPause);
 
-        var baseDate = recurrenceStartsOn.HasValue &&
-                       recurrenceStartsOn.Value > DateTime.Now
+        var baseDate = recurrenceStartsOn.Value > DateTime.Now
                        ? recurrenceStartsOn.Value : DateTime.Now;
 
-        entity.NextTime = recurrenceService.CalculateNextTime(cronExpression, null, baseDate);
+        entity.NextTime = recurrenceService.CalculateNextTime(cronExpression, baseDate, baseDate);
 
         if (isCreating)
         {
