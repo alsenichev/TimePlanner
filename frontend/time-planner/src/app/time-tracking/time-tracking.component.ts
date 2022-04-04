@@ -72,6 +72,10 @@ export class TimeTrackingComponent implements OnInit {
     });
   }
 
+  navChange(){
+    this.currentWorkItem = undefined;
+  }
+
   onWorkItemDeleted(workItem: WorkItem){
     this.timeTrackingService.deleteWorkItem(workItem.id).subscribe(_ =>{
       this.loadWorkItems();
@@ -108,7 +112,8 @@ export class TimeTrackingComponent implements OnInit {
       recurrenceEndsOn: workItem.recurrenceEndsOn,
       isOnPause: workItem.isOnPause
     }
-    this.timeTrackingService.updateWorkItem(request).subscribe(wi=>{
+    this.timeTrackingService.updateWorkItem(request).subscribe(wi => {
+      this.currentWorkItem = undefined;
       this.loadWorkItems();
     });
   }

@@ -24,6 +24,9 @@ export class WorkItemEditorComponent {
       this._currentWorkItem = workItem;
       this.formVisible = true;
     }
+    else{
+      this.formVisible = false;
+    }
   }
   _currentWorkItem: WorkItem;
   formVisible: boolean;
