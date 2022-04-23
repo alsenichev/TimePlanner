@@ -1,4 +1,5 @@
 ﻿using TimePlanner.Domain.Models;
+using TimePlanner.Domain.Services;
 
 namespace TimePlanner.Domain.Interfaces
 {
@@ -11,19 +12,9 @@ namespace TimePlanner.Domain.Interfaces
     Task<WorkItem> CreateWorkItemAsync(string name);
 
     Task<WorkItem> UpdateWorkItemAsync(
-      Guid workItemId,
-      string name,
-      Category targetCategory,
-      int sortOrder);
-
-    Task<WorkItem> UpdateRecurrence(
-      Guid workItemId,
-      string? cronExpression,
-      DateTime? recurrenceStartsOn,
-      DateTime? recurrenceEndsOn,
-      bool? isAfterPreviousCompleted,
-      int? maxRepetitionsCount,
-      bool? isOnPause);
+      WorkItem workItem,
+      Dictionary<Guid,SortData>? sortData,
+      WorkItem? repeatedWorkItem);
 
     Task DeleteWorkItemAsync(Guid workItemId);
   }

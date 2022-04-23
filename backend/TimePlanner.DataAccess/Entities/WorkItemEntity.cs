@@ -29,9 +29,9 @@ namespace TimePlanner.DataAccess.Entities
 
     public DateTime? RecurrenceEndsOn { get; set; }
 
-    public int? RepetitionsCount { get; set; }
+    public int? RepetitionCount { get; set; }
 
-    public int? MaxRepetitionsCount { get; set; }
+    public int? MaxRepetitionCount { get; set; }
 
     public bool? IsIfPreviousCompleted { get; set; }
 

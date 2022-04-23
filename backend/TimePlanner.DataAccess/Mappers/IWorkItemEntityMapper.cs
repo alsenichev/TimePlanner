@@ -8,19 +8,14 @@ namespace TimePlanner.DataAccess.Mappers
   {
     WorkItem Map(WorkItemEntity entity);
 
+    WorkItemEntity CreateEntity(WorkItem workItem);
+
     SortData MapSortData(WorkItemEntity entity);
 
-    void CopyRecurrence(WorkItemEntity source, WorkItemEntity target);
+    void UpdateEntity(WorkItemEntity entity, WorkItem workItem);
 
     void CleanUpRecurrence(WorkItemEntity entity);
 
-    void AssignRecurrence(
-      WorkItemEntity source,
-      string cronExpression,
-      DateTime? recurrenceStartsOn,
-      DateTime? recurrenceEndsOn,
-      bool? isAfterPreviousCompleted,
-      int? maxRepetitionsCount,
-      bool? isOnPause);
+    void CopyRecurrence(WorkItemEntity entity, WorkItemEntity newEntity);
   }
 }

@@ -61,35 +61,6 @@ namespace TimePlanner.DataAccess.Repositories
       }
     }
 
-    private void CreateNextRecurrentWorkItemInstance(WorkItemEntity entity)
-    {
-      if ((entity.MaxRepetitionsCount.HasValue && entity.RepetitionsCount.HasValue &&
-           entity.RepetitionsCount.Value == entity.MaxRepetitionsCount.Value) ||
-           entity.RecurrenceEndsOn.HasValue && entity.RecurrenceEndsOn.Value >= DateTime.Now)
-      {
-        // no more repetitions for this work item
-        workItemEntityMapper.CleanUpRecurrence(entity);
-        return;
-      }
-
-      // create new item
-      var newEntity = new WorkItemEntity
-      {
-        Category = Category.Scheduled.ToString(),
-        CreatedAt = DateTime.Now,
-        Name = entity.Name,
-        SortOrder = int.MaxValue,
-        NextTime = recurrenceService.CalculateNextTime(entity.CronExpression!, DateTime.Now, DateTime.Now)
-      };
-      workItemEntityMapper.CopyRecurrence(entity, newEntity);
-      if (newEntity.MaxRepetitionsCount.HasValue)
-      {
-        newEntity.RepetitionsCount++;
-      }
-      workItemEntityMapper.CleanUpRecurrence(entity);
-      dbContext.Add(newEntity);
-    }
-
     private static List<WorkItemEntity> UpdateArchived(IQueryable<WorkItemEntity> entities)
     {
       DateTime archiveThreshold = DateTime.Now.AddDays(-7);
@@ -101,53 +72,6 @@ namespace TimePlanner.DataAccess.Repositories
       }
 
       return archive;
-    }
-
-    private void UpdateName(string name, WorkItemEntity entity)
-    {
-      entity.Name = name;
-      dbContext.Update(entity);
-    }
-
-    private void UpdateCategory(IQueryable<WorkItemEntity> entities, WorkItemEntity entity, Category targetCategory)
-    {
-      SortForCategoryChange(entities, entity.WorkItemId, targetCategory);
-
-      if (targetCategory == Category.Completed)
-      {
-        entity.CompletedAt = DateTime.Now;
-        if (!string.IsNullOrEmpty(entity.CronExpression))
-        {
-          CreateNextRecurrentWorkItemInstance(entity);
-        }
-      }
-      entity.Category = targetCategory.ToString();
-      dbContext.UpdateRange(entities);
-    }
-
-    private void UpdateSortOrder(IQueryable<WorkItemEntity> entities, WorkItemEntity entity, int sortOrder)
-    {
-      List<SortData> sortData = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
-      Dictionary<Guid, SortData> ordered = SortingService.ChangeSortOrder(
-        sortData,
-        workItemEntityMapper.MapSortData(entity),
-        sortOrder - entity.SortOrder).ToDictionary(i => i.Id);
-      foreach (var e in entities)
-      {
-        e.SortOrder = ordered[e.WorkItemId].SortOrder;
-      }
-      dbContext.UpdateRange(entities);
-    }
-
-    private void SortForCategoryChange(IQueryable<WorkItemEntity> entities, Guid workItemId, Category targetCategory)
-    {
-      var models = entities.Select(e => workItemEntityMapper.MapSortData(e)).ToList();
-      Dictionary<Guid, SortData> ordered = SortingService.ChangeCategory(
-        models, workItemId, targetCategory).ToDictionary(i => i.Id);
-      foreach (var e in entities)
-      {
-        e.SortOrder = ordered[e.WorkItemId].SortOrder;
-      }
     }
 
     public WorkItemRepository(
@@ -237,37 +161,36 @@ namespace TimePlanner.DataAccess.Repositories
     }
 
     public async Task<WorkItem> UpdateWorkItemAsync(
-      Guid workItemId,
-      string name,
-      Category targetCategory,
-      int sortOrder)
+      WorkItem workItem,
+      Dictionary<Guid,SortData>? sortData,
+      WorkItem? repeatedWorkItem)
     {
       IQueryable<WorkItemEntity> entities = dbContext.WorkItemEntities
         .Where(i => i.Category != Category.Archived.ToString());
-      WorkItemEntity? entity = entities.FirstOrDefault(e => e.WorkItemId == workItemId);
+      WorkItemEntity? entity = entities.FirstOrDefault(e => e.WorkItemId == workItem.Id);
 
       if (entity == null)
       {
         throw new EntityMissingException();
       }
 
-      if (!entity.Name.Equals(name))
+      workItemEntityMapper.UpdateEntity(entity, workItem);
+      if(sortData != null)
       {
-        UpdateName(name, entity);
-      }
-      else if (entity.SortOrder != sortOrder)
-      {
-        UpdateSortOrder(entities, entity, sortOrder);
-      }
-      else if (!entity.Category.Equals(targetCategory.ToString()))
-      {
-        UpdateCategory(entities, entity, targetCategory);
+        foreach (var e in entities)
+        {
+          e.SortOrder = sortData[e.WorkItemId].SortOrder;
+        }
+        dbContext.UpdateRange(entities);
       }
       else
       {
-        return await GetWorkItemAsync(entity.WorkItemId);
+        dbContext.Update(entity);
       }
-
+      if (repeatedWorkItem != null)
+      {
+        await dbContext.AddAsync(workItemEntityMapper.CreateEntity(repeatedWorkItem.Value));
+      }
       try
       {
         await dbContext.SaveChangesAsync();
@@ -281,81 +204,7 @@ namespace TimePlanner.DataAccess.Repositories
 
       return await GetWorkItemAsync(entity.WorkItemId);
     }
-
-    public async Task<WorkItem> UpdateRecurrence(
-      Guid workItemId,
-      string? cronExpression,
-      DateTime? recurrenceStartsOn,
-      DateTime? recurrenceEndsOn,
-      bool? isAfterPreviousCompleted,
-      int? maxRepetitionsCount,
-      bool? isOnPause)
-    {
-      IQueryable<WorkItemEntity> entities = dbContext.WorkItemEntities
-        .Where(i => i.Category != Category.Archived.ToString());
-      WorkItemEntity? entity = entities.FirstOrDefault(e => e.WorkItemId == workItemId);
-
-      if (entity == null)
-      {
-        throw new EntityMissingException();
-      }
-
-      if (string.IsNullOrEmpty(cronExpression))
-      {
-        // reset existing recurrence
-        workItemEntityMapper.CleanUpRecurrence(entity);
-
-        // promote to Today
-        entity.Category = Category.Today.ToString();
-        SortForCategoryChange(entities, entity.WorkItemId, Category.Today);
-
-        dbContext.UpdateRange(entities);
-      }
-      else
-      {
-        bool isCreating = string.IsNullOrEmpty(entity.CronExpression);
-        recurrenceStartsOn = recurrenceStartsOn.HasValue ? recurrenceStartsOn : DateTime.Now;
-
-        workItemEntityMapper.AssignRecurrence(
-          entity,
-          cronExpression,
-          recurrenceStartsOn,
-          recurrenceEndsOn,
-          isAfterPreviousCompleted,
-          maxRepetitionsCount,
-          isOnPause);
-
-        var baseDate = recurrenceStartsOn.Value > DateTime.Now
-                       ? recurrenceStartsOn.Value : DateTime.Now;
-
-        entity.NextTime = recurrenceService.CalculateNextTime(cronExpression, baseDate, baseDate);
-
-        if (isCreating)
-        {
-          entity.Category = Category.Scheduled.ToString();
-          SortForCategoryChange(entities, entity.WorkItemId, Category.Scheduled);
-
-          dbContext.UpdateRange(entities);
-        }
-        else
-        {
-          dbContext.Update(entity);
-        }
-      }
-
-      try
-      {
-        await dbContext.SaveChangesAsync();
-      }
-      catch (Exception ex)
-      {
-        logger.LogError(ex, "Failed to update the recurrence.");
-
-        throw new DataAccessException();
-      }
-
-      return await GetWorkItemAsync(entity.WorkItemId);
-    }
+      
 
     public async Task DeleteWorkItemAsync(Guid workItemId)
     {

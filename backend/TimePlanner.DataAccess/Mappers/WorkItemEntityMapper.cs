@@ -39,8 +39,8 @@ namespace TimePlanner.DataAccess.Mappers
       target.CronExpression = source.CronExpression;
       target.RecurrenceStartsOn = source.RecurrenceStartsOn;
       target.RecurrenceEndsOn = source.RecurrenceEndsOn;
-      target.RepetitionsCount = source.RepetitionsCount;
-      target.MaxRepetitionsCount = source.MaxRepetitionsCount;
+      target.RepetitionCount = source.RepetitionCount;
+      target.MaxRepetitionCount = source.MaxRepetitionCount;
       target.IsIfPreviousCompleted = source.IsIfPreviousCompleted;
     }
 
@@ -49,8 +49,8 @@ namespace TimePlanner.DataAccess.Mappers
       entity.CronExpression = null;
       entity.RecurrenceStartsOn = null;
       entity.RecurrenceEndsOn= null;
-      entity.RepetitionsCount = null;
-      entity.MaxRepetitionsCount = null;
+      entity.RepetitionCount = null;
+      entity.MaxRepetitionCount = null;
       entity.IsIfPreviousCompleted = null;
       entity.IsOnPause = null;
     }
@@ -67,7 +67,7 @@ namespace TimePlanner.DataAccess.Mappers
       entity.CronExpression = cronExpression;
       entity.RecurrenceStartsOn = recurrenceStartsOn;
       entity.RecurrenceEndsOn = recurrenceEndsOn;
-      entity.MaxRepetitionsCount = maxRepetitionsCount;
+      entity.MaxRepetitionCount = maxRepetitionsCount;
       entity.IsIfPreviousCompleted = isAfterPreviousCompleted;
       entity.IsOnPause = isOnPause;
     }
@@ -90,10 +90,36 @@ namespace TimePlanner.DataAccess.Mappers
         entity.RecurrenceStartsOn,
         entity.RecurrenceEndsOn,
         entity.IsIfPreviousCompleted,
-        entity.MaxRepetitionsCount,
+        entity.MaxRepetitionCount,
+        entity.RepetitionCount,
         entity.IsOnPause,
         entity.SortOrder,
         entity.Durations.Select(d => Map(d)).ToList());
+    }
+
+    public WorkItemEntity CreateEntity(WorkItem workItem)
+    {
+      var entity = new WorkItemEntity();
+      UpdateEntity(entity, workItem);
+      return entity;
+    }
+
+    public void UpdateEntity(WorkItemEntity entity, WorkItem workItem)
+    {
+      entity.Name = workItem.Name;
+      entity.Category = workItem.Category.ToString();
+      entity.CreatedAt = workItem.CreatedAt;
+      entity.CompletedAt = workItem.CompletedAt;
+      entity.NextTime = workItem.NextTime;
+      entity.CronExpression = workItem.CronExpression;
+      entity.RecurrenceStartsOn = workItem.RecurrenceStartsOn;
+      entity.RecurrenceEndsOn = workItem.RecurrenceEndsOn;
+      entity.IsIfPreviousCompleted = workItem.IsIfPreviousCompleted;
+      entity.MaxRepetitionCount = workItem.MaxRepetitionCount;
+      entity.RepetitionCount = workItem.RepetitionCount;
+      entity.IsOnPause = workItem.IsOnPause;
+      entity.SortOrder = workItem.SortOrder;
+      entity.Durations = workItem.Durations.Select(d => Map(workItem.Id.Value, d)).ToList();
     }
   }
 }

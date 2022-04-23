@@ -15,6 +15,7 @@
     DateTime? RecurrenceEndsOn,
     bool? IsIfPreviousCompleted,
     int? MaxRepetitionCount,
+    int? RepetitionCount,
     bool? IsOnPause,
     int SortOrder,
     List<Duration> Durations);
