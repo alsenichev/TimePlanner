@@ -1,35 +1,44 @@
-﻿using TimePlanner.Domain.Interfaces;
-using TimePlanner.Domain.Models;
+﻿using Cronos;
+using System.Text.RegularExpressions;
+using TimePlanner.Domain.Interfaces;
 
 namespace TimePlanner.Domain.Services
 {
-  public class RecurrenceService : IRecurrenceService
+  public class RecurrenceService :  IRecurrenceService
   {
-    private readonly ITimeProvider timeProvider;
+    private static readonly Regex daysAfterRegex = new Regex(@"^daysAfterCompletion: (?<number>\d{1,3})$");
 
-    public RecurrenceService(ITimeProvider timeProvider)
+    public DateTime? CalculateNextTime(string cronExpression, DateTime? lastFiredAt, DateTime relativeTo)
     {
-      this.timeProvider = timeProvider;
+      var match = daysAfterRegex.Match(cronExpression);
+      if (match.Success)
+      {
+        return ParseDaysAfterCompletion(lastFiredAt, match.Groups["number"].Value);
+      }
+      try
+      {
+        var expression = CronExpression.Parse(cronExpression);
+        var next = expression.GetNextOccurrence(new DateTimeOffset(relativeTo), TimeZoneInfo.Local);
+        return next?.DateTime;
+      }
+      catch (CronFormatException)
+      {
+        throw new ApplicationException($"Cron expression can not be parsed: {cronExpression}");
+      }
     }
 
-    public DateTime? CalculateNextTime(Recurrence recurrence)
+    private DateTime? ParseDaysAfterCompletion(DateTime? lastFiredAt, string value)
     {
-      var baseDate = timeProvider.Now;
-      if (recurrence.DaysEveryN.HasValue)
+      if(lastFiredAt == null)
       {
-        return baseDate.AddDays(recurrence.DaysEveryN.Value);
+        throw new ApplicationException("Previous execution time is not specified.");
       }
-
-      if (recurrence.DaysCustom != null && recurrence.DaysCustom.Count > 0)
+      int days = int.Parse(value);
+      if(days < 1 || days > 365)
       {
-        var newDay = recurrence.DaysCustom.FirstOrDefault(d => d > baseDate.Day);
-        if (newDay == 0)
-        {
-          return new DateTime(baseDate.Year, baseDate.Month, 1).AddMonths(1).AddDays(recurrence.DaysCustom[0]);
-        }
+        throw new ApplicationException("Days range must be between 1-365");
       }
-
-      throw new ApplicationException("The recurrence value can not be correctly processed.");
+      return lastFiredAt.Value.AddDays(days);
     }
   }
 }

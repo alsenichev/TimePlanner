@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TimePlanner.DataAccess;
 
@@ -11,9 +12,10 @@ using TimePlanner.DataAccess;
 namespace TimePlanner.DataAccess.Migrations
 {
     [DbContext(typeof(TimePlannerDbContext))]
-    partial class TimePlannerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20220401063304_Cron")]
+    partial class Cron
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -91,13 +93,10 @@ namespace TimePlanner.DataAccess.Migrations
                     b.Property<string>("CronExpression")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool?>("IsIfPreviousCompleted")
+                    b.Property<bool?>("IsAfterPreviousCompleted")
                         .HasColumnType("bit");
 
-                    b.Property<bool?>("IsOnPause")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("MaxRepetitionsCount")
+                    b.Property<int?>("MaxRepetitionCount")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
@@ -107,13 +106,10 @@ namespace TimePlanner.DataAccess.Migrations
                     b.Property<DateTime?>("NextTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("RecurrenceEndsOn")
+                    b.Property<DateTime?>("RecurrenceStartsFrom")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("RecurrenceStartsOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("RepetitionsCount")
+                    b.Property<int?>("RepetitionCount")
                         .HasColumnType("int");
 
                     b.Property<int>("SortOrder")

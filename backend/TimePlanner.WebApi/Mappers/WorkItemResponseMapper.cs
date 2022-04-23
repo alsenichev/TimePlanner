@@ -21,7 +21,12 @@ internal class WorkItemResponseMapper : IWorkItemResponseMapper
       Id = workItem.Id.Value,
       Name = workItem.Name,
       SortOrder = workItem.SortOrder,
-      Recurrence = workItem.Recurrence,
+      CronExpression = workItem.CronExpression,
+      IsAfterPreviousCompleted = workItem.IsIfPreviousCompleted,
+      MaxRepetitionCount = workItem.MaxRepetitionCount,
+      RecurrenceStartsOn = workItem.RecurrenceStartsOn,
+      RecurrenceEndsOn = workItem.RecurrenceEndsOn,
+      IsOnPause = workItem.IsOnPause,
       NextTime = workItem.NextTime
     };
   }

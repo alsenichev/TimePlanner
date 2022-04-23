@@ -14,8 +14,6 @@ namespace TimePlanner.WebApi.Validators
       //  .Must(d => DateOnly.TryParse(d.date, out var _))
       //  .WithMessage("Duration date can not be converted to DateOnly.");
       RuleFor(r => r.Name).NotEmpty();
-      RuleFor(r => r.Category).Must(c => Enum.TryParse(typeof(Category), c, true, out var _))
-        .WithMessage("Can not parse the Category enum.");
     }
   }
 }

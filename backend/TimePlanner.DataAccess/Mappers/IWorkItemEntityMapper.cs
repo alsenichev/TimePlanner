@@ -1,7 +1,6 @@
 ﻿using TimePlanner.DataAccess.Entities;
 using TimePlanner.Domain.Models;
 using TimePlanner.Domain.Services;
-using TimePlanner.Domain.Utils;
 
 namespace TimePlanner.DataAccess.Mappers
 {
@@ -9,14 +8,14 @@ namespace TimePlanner.DataAccess.Mappers
   {
     WorkItem Map(WorkItemEntity entity);
 
+    WorkItemEntity CreateEntity(WorkItem workItem);
+
     SortData MapSortData(WorkItemEntity entity);
 
-    Recurrence ExtractRecurrence(WorkItemEntity entity);
-
-    void CopyRecurrence(WorkItemEntity source, WorkItemEntity target);
+    void UpdateEntity(WorkItemEntity entity, WorkItem workItem);
 
     void CleanUpRecurrence(WorkItemEntity entity);
 
-    void AssignRecurrence(WorkItemEntity source, Recurrence target);
+    void CopyRecurrence(WorkItemEntity entity, WorkItemEntity newEntity);
   }
 }

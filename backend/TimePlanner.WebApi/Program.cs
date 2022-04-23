@@ -37,6 +37,7 @@ builder.Services.AddScoped<IWorkItemEntityMapper, WorkItemEntityMapper>();
 builder.Services.AddScoped<IValidator<CreateWorkItemRequest>, WorkItemCreateRequestValidator>();
 builder.Services.AddScoped<IValidator<UpdateWorkItemRequest>, WorkItemUpdateRequestValidator>();
 builder.Services.AddScoped<ITimeProvider, ProductionTimeProvider>();
+builder.Services.AddScoped<IRecurrenceService, RecurrenceService>();
 builder.Services.AddDbContext<TimePlannerDbContext>(
   o => o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 

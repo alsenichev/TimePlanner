@@ -1,8 +1,6 @@
-﻿using System.Text.Json;
-using TimePlanner.DataAccess.Entities;
+﻿using TimePlanner.DataAccess.Entities;
 using TimePlanner.Domain.Models;
 using TimePlanner.Domain.Services;
-using TimePlanner.Domain.Utils;
 
 namespace TimePlanner.DataAccess.Mappers
 {
@@ -36,93 +34,42 @@ namespace TimePlanner.DataAccess.Mappers
       };
     }
 
-    public Recurrence ExtractRecurrence(WorkItemEntity entity)
-    {
-      return new Recurrence(
-        entity.WorkItemId,
-        entity.YearsEveryN,
-        ParseSqlList(entity.YearsCustom),
-        entity.MonthsEveryN,
-        ParseSqlList(entity.MonthsCustom),
-        entity.WeeksEveryN,
-        ParseSqlList(entity.WeeksCustom),
-        ParseSqlList(entity.WeekDaysCustom),
-        entity.DaysEveryN,
-        ParseSqlList(entity.DaysCustom),
-        entity.RepetitionCount,
-        entity.MaxRepetitionCount,
-        entity.IsAfterPreviousCompleted);
-    }
-
     public void CopyRecurrence(WorkItemEntity source, WorkItemEntity target)
     {
-      target.IsRecurrent = true;
-      target.YearsEveryN = source.YearsEveryN;
-      target.YearsCustom = source.YearsCustom;
-      target.MonthsEveryN = source.MonthsEveryN;
-      target.MonthsCustom = source.MonthsCustom;
-      target.WeeksEveryN = source.WeeksEveryN;
-      target.WeeksCustom = source.WeeksCustom;
-      target.WeekDaysCustom = source.WeekDaysCustom;
-      target.DaysEveryN = source.DaysEveryN;
-      target.DaysCustom = source.DaysCustom;
+      target.CronExpression = source.CronExpression;
+      target.RecurrenceStartsOn = source.RecurrenceStartsOn;
+      target.RecurrenceEndsOn = source.RecurrenceEndsOn;
       target.RepetitionCount = source.RepetitionCount;
       target.MaxRepetitionCount = source.MaxRepetitionCount;
-      target.IsAfterPreviousCompleted = source.IsAfterPreviousCompleted;
+      target.IsIfPreviousCompleted = source.IsIfPreviousCompleted;
     }
 
     public void CleanUpRecurrence(WorkItemEntity entity)
     {
-      entity.IsRecurrent = false;
-      entity.YearsEveryN = null;
-      entity.YearsCustom = null;
-      entity.MonthsEveryN = null;
-      entity.MonthsCustom = null;
-      entity.WeeksEveryN = null;
-      entity.WeeksCustom = null;
-      entity.WeekDaysCustom = null;
-      entity.DaysEveryN = null;
-      entity.DaysCustom = null;
+      entity.CronExpression = null;
+      entity.RecurrenceStartsOn = null;
+      entity.RecurrenceEndsOn= null;
       entity.RepetitionCount = null;
       entity.MaxRepetitionCount = null;
-      entity.IsAfterPreviousCompleted = null;
+      entity.IsIfPreviousCompleted = null;
+      entity.IsOnPause = null;
     }
 
-    public void AssignRecurrence(WorkItemEntity entity, Recurrence model)
+    public void AssignRecurrence(
+      WorkItemEntity entity,
+      string cronExpression,
+      DateTime? recurrenceStartsOn,
+      DateTime? recurrenceEndsOn,
+      bool? isAfterPreviousCompleted,
+      int? maxRepetitionsCount,
+      bool? isOnPause)
     {
-      entity.IsRecurrent = true;
-      entity.YearsEveryN = model.YearsEveryN;
-      entity.YearsCustom = model.YearsCustom != null ? string.Join(",", model.YearsCustom) : null;
-      entity.MonthsEveryN = model.MonthsEveryN;
-      entity.MonthsCustom = model.MonthsCustom != null ? string.Join(",", model.MonthsCustom) : null;
-      entity.WeeksEveryN = model.WeeksEveryN;
-      entity.WeeksCustom = model.WeeksCustom != null ? string.Join(",", model.WeeksCustom) : null;
-      entity.WeekDaysCustom = model.WeekDaysCustom != null ? string.Join(",", model.WeekDaysCustom) : null;
-      entity.DaysEveryN = model.DaysEveryN;
-      entity.DaysCustom = model.DaysCustom != null ? string.Join(",", model.DaysCustom) : null;
-      entity.RepetitionCount = model.RepetitionCount;
-      entity.MaxRepetitionCount = model.MaxRepetitionCount;
-      entity.IsAfterPreviousCompleted = model.IsAfterPreviousCompleted;
-    }
-
-    private List<int>? ParseSqlList(string? list)
-    {
-      if (list == null)
-      {
-        return null;
-      }
-
-      var split = list.Split(",", StringSplitOptions.RemoveEmptyEntries);
-      var result = new List<int>();
-      foreach (var entry in split)
-      {
-        if (int.TryParse(entry, out var number))
-        {
-          result.Add(number);
-        }
-      }
-
-      return result;
+      entity.CronExpression = cronExpression;
+      entity.RecurrenceStartsOn = recurrenceStartsOn;
+      entity.RecurrenceEndsOn = recurrenceEndsOn;
+      entity.MaxRepetitionCount = maxRepetitionsCount;
+      entity.IsIfPreviousCompleted = isAfterPreviousCompleted;
+      entity.IsOnPause = isOnPause;
     }
 
     public SortData MapSortData(WorkItemEntity entity)
@@ -139,9 +86,40 @@ namespace TimePlanner.DataAccess.Mappers
         entity.CreatedAt,
         entity.CompletedAt,
         entity.NextTime,
-        entity.IsRecurrent ? JsonSerializer.Serialize(ExtractRecurrence(entity)) : null,
+        entity.CronExpression,
+        entity.RecurrenceStartsOn,
+        entity.RecurrenceEndsOn,
+        entity.IsIfPreviousCompleted,
+        entity.MaxRepetitionCount,
+        entity.RepetitionCount,
+        entity.IsOnPause,
         entity.SortOrder,
         entity.Durations.Select(d => Map(d)).ToList());
+    }
+
+    public WorkItemEntity CreateEntity(WorkItem workItem)
+    {
+      var entity = new WorkItemEntity();
+      UpdateEntity(entity, workItem);
+      return entity;
+    }
+
+    public void UpdateEntity(WorkItemEntity entity, WorkItem workItem)
+    {
+      entity.Name = workItem.Name;
+      entity.Category = workItem.Category.ToString();
+      entity.CreatedAt = workItem.CreatedAt;
+      entity.CompletedAt = workItem.CompletedAt;
+      entity.NextTime = workItem.NextTime;
+      entity.CronExpression = workItem.CronExpression;
+      entity.RecurrenceStartsOn = workItem.RecurrenceStartsOn;
+      entity.RecurrenceEndsOn = workItem.RecurrenceEndsOn;
+      entity.IsIfPreviousCompleted = workItem.IsIfPreviousCompleted;
+      entity.MaxRepetitionCount = workItem.MaxRepetitionCount;
+      entity.RepetitionCount = workItem.RepetitionCount;
+      entity.IsOnPause = workItem.IsOnPause;
+      entity.SortOrder = workItem.SortOrder;
+      entity.Durations = workItem.Durations.Select(d => Map(workItem.Id.Value, d)).ToList();
     }
   }
 }

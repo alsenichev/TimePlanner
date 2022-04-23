@@ -20,13 +20,13 @@ export class WorkItemDetailsComponent {
 
   get isComplete(): boolean { return this._isComplete; }
   set isComplete(isComplete: boolean){
-    this._isComplete= this.isComplete;
+    this._isComplete = this.isComplete;
     if(isComplete){
       this._workItem.category = 'Completed';
     }else{
       this._workItem.category = 'Today';
     }
-    this.workItemChanged.emit(this._workItem);
+    this.emitChanged();
   }
 
   _workItem:WorkItem;
@@ -38,7 +38,13 @@ export class WorkItemDetailsComponent {
     let request : WorkItemUpdateRequest = {
       id: this._workItem.id,
       name: this._workItem.name,
-      recurrence: this._workItem.recurrence,
+      updateRecurrence: false,
+      cronExpression: this._workItem.cronExpression,
+      isAfterPreviousCompleted: this._workItem.isAfterPreviousCompleted,
+      maxRepetetionsCount: this._workItem.maxRepetetionsCount,
+      recurrenceStartsOn: this._workItem.recurrenceStartsOn,
+      recurrenceEndsOn: this._workItem.recurrenceEndsOn,
+      isOnPause: this._workItem.isOnPause,
       category: this._workItem.category,
       sortOrder: this._workItem.sortOrder,
     };
