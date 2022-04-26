@@ -37,11 +37,11 @@ namespace TimePlanner.DataAccess.Repositories
       {
         foreach (var entity in awaken)
         {
-          SortForCategoryChange(entities, entity.WorkItemId, Category.Today);
+          // TODO SortForCategoryChange(entities, entity.WorkItemId, Category.Today);
 
           if (!(entity.IsIfPreviousCompleted.HasValue && entity.IsIfPreviousCompleted.Value))
           {
-            CreateNextRecurrentWorkItemInstance(entity);
+            // TODO CreateNextRecurrentWorkItemInstance(entity);
           }
           entity.NextTime = null;
           entity.Category = Category.Today.ToString();
