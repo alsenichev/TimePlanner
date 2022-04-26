@@ -39,7 +39,7 @@ builder.Services.AddScoped<IValidator<UpdateWorkItemRequest>, WorkItemUpdateRequ
 builder.Services.AddScoped<ITimeProvider, ProductionTimeProvider>();
 builder.Services.AddScoped<IRecurrenceService, RecurrenceService>();
 builder.Services.AddDbContext<TimePlannerDbContext>(
-  o => o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+  o => o.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Host.UseWindowsService();
 
