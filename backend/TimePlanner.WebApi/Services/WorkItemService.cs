@@ -12,7 +12,7 @@ public class WorkItemService : IWorkItemService
   private readonly IWorkItemRepository workItemRepository;
   private readonly IRecurrenceService recurrenceService;
 
-  public async Task UpdateArchivedAndRepeating()
+  private async Task UpdateArchivedAndRepeating()
   {
     List<WorkItem> workItems = await workItemRepository.GetWorkItemsAsync();
 
@@ -49,7 +49,6 @@ public class WorkItemService : IWorkItemService
       }
     }
   }
-
   private WorkItem UpdateCategory(
     List<WorkItem> workItems,
     WorkItem workItem,
@@ -110,7 +109,7 @@ public class WorkItemService : IWorkItemService
       Durations: new List<Duration>());
   }
 
-  public WorkItem CleanUpRecurrence(WorkItem workItem)
+  private WorkItem CleanUpRecurrence(WorkItem workItem)
   {
     return workItem with
     {
@@ -147,8 +146,6 @@ public class WorkItemService : IWorkItemService
     this.recurrenceService = recurrenceService;
   }
 
-
-
   public async Task<List<WorkItem>> GetWorkItemsAsync()
   {
     await UpdateArchivedAndRepeating();
@@ -160,9 +157,15 @@ public class WorkItemService : IWorkItemService
     return workItemRepository.GetWorkItemAsync(workItemId);
   }
 
-  public Task<WorkItem> CreateWorkItemAsync(CreateWorkItemRequest request)
+  public async Task<WorkItem> CreateWorkItemAsync(CreateWorkItemRequest request)
   {
-    return workItemRepository.CreateWorkItemAsync(request.Name);
+    List<WorkItem> workItems = await workItemRepository.GetWorkItemsAsync();
+    List<SortData> sortModels = workItems.Select(e => CreateSortData(e)).ToList();
+    var tempGuid = Guid.NewGuid();
+    var sortModel = new SortData(Guid.NewGuid(), Category.Today, 0);
+    Dictionary<Guid, SortData> ordered = SortingService.AddItem(sortModels, sortModel).ToDictionary(i => i.Id);
+    int sortOrder = ordered[tempGuid].SortOrder;
+    return await workItemRepository.CreateWorkItemAsync(request.Name, sortOrder, ordered);
   }
 
   public async Task<WorkItem> UpdateWorkItemAsync(UpdateWorkItemRequest workItemRequest)
@@ -239,8 +242,17 @@ public class WorkItemService : IWorkItemService
 
   }
 
-  public Task DeleteWorkItemAsync(Guid workItemId)
+  public async Task DeleteWorkItemAsync(Guid workItemId)
   {
-    return workItemRepository.DeleteWorkItemAsync(workItemId);
+    List<WorkItem> workItems = await workItemRepository.GetWorkItemsAsync();
+    WorkItem workItem = workItems.SingleOrDefault(i => i.Id == workItemId);
+    if (workItem.Id == null)
+    {
+      throw new EntityMissingException();
+    }
+
+    List<SortData> sortModels = workItems.Select(e => CreateSortData(e)).ToList();
+    Dictionary<Guid, SortData> ordered = SortingService.DeleteItem(sortModels, workItemId).ToDictionary(i => i.Id);
+    await workItemRepository.DeleteWorkItemAsync(workItemId, ordered);
   }
 }

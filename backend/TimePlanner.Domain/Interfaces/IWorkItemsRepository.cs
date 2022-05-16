@@ -9,13 +9,14 @@ namespace TimePlanner.Domain.Interfaces
 
     Task<WorkItem> GetWorkItemAsync(Guid workItemId);
 
-    Task<WorkItem> CreateWorkItemAsync(string name);
+    Task<WorkItem> CreateWorkItemAsync(
+      string name, int sortOrder, Dictionary<Guid, SortData> sortData);
 
     Task<WorkItem> UpdateWorkItemAsync(
       WorkItem workItem,
       Dictionary<Guid,SortData>? sortData,
       WorkItem? repeatedWorkItem);
 
-    Task DeleteWorkItemAsync(Guid workItemId);
+    Task DeleteWorkItemAsync(Guid workItemId, Dictionary<Guid, SortData> sortData);
   }
 }
