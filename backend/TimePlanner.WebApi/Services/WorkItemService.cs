@@ -162,7 +162,7 @@ public class WorkItemService : IWorkItemService
     List<WorkItem> workItems = await workItemRepository.GetWorkItemsAsync();
     List<SortData> sortModels = workItems.Select(e => CreateSortData(e)).ToList();
     var tempGuid = Guid.NewGuid();
-    var sortModel = new SortData(Guid.NewGuid(), Category.Today, 0);
+    var sortModel = new SortData(tempGuid, Category.Today, 0);
     Dictionary<Guid, SortData> ordered = SortingService.AddItem(sortModels, sortModel).ToDictionary(i => i.Id);
     int sortOrder = ordered[tempGuid].SortOrder;
     return await workItemRepository.CreateWorkItemAsync(request.Name, sortOrder, ordered);
