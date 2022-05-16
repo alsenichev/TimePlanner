@@ -1,4 +1,5 @@
-﻿using TimePlanner.Domain.Exceptions;
+﻿using System.Collections.Immutable;
+using TimePlanner.Domain.Exceptions;
 using TimePlanner.Domain.Interfaces;
 using TimePlanner.Domain.Models;
 using TimePlanner.Domain.Services;
@@ -10,6 +11,44 @@ public class WorkItemService : IWorkItemService
 {
   private readonly IWorkItemRepository workItemRepository;
   private readonly IRecurrenceService recurrenceService;
+
+  public async Task UpdateArchivedAndRepeating()
+  {
+    List<WorkItem> workItems = await workItemRepository.GetWorkItemsAsync();
+
+    DateTime archiveThreshold = DateTime.Now.AddDays(-7);
+
+    // these items will have the modified category
+    List<WorkItem> archived = workItems
+      .Where(e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreshold.Date)
+      .Select(i => i with { Category = Category.Archived })
+      .ToList();
+
+    // these will have category and NextTime updated
+    List<WorkItem> awaken = workItems.Where(e =>
+        e.Category == Category.Scheduled &&
+        e.NextTime.HasValue &&
+        e.NextTime.Value <= DateTime.Now &&
+        (e.IsOnPause == null || e.IsOnPause.Value == false))
+      .Select(i => i with { NextTime = null, Category = Category.Today })
+      .ToList();
+
+    ImmutableList<SortData> sortData = workItems.Select(e => CreateSortData(e)).ToImmutableList();
+    List<WorkItem> createdItems = new List<WorkItem>();
+    foreach (WorkItem workItem in awaken)
+    {
+      sortData = SortingService.ChangeCategory(sortData, workItem.Id.Value, Category.Today);
+
+      if (!(workItem.IsIfPreviousCompleted.HasValue && workItem.IsIfPreviousCompleted.Value))
+      {
+        var createdItem = CreateNextRecurrentWorkItemInstance(workItem);
+        if(createdItem != null)
+        {
+          createdItems.Add(createdItem.Value);
+        }
+      }
+    }
+  }
 
   private WorkItem UpdateCategory(
     List<WorkItem> workItems,
@@ -108,9 +147,12 @@ public class WorkItemService : IWorkItemService
     this.recurrenceService = recurrenceService;
   }
 
-  public Task<List<WorkItem>> GetWorkItemsAsync()
+
+
+  public async Task<List<WorkItem>> GetWorkItemsAsync()
   {
-    return workItemRepository.GetWorkItemsAsync();
+    await UpdateArchivedAndRepeating();
+    return await workItemRepository.GetWorkItemsAsync();
   }
 
   public Task<WorkItem> GetWorkItemAsync(Guid workItemId)

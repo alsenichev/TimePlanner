@@ -16,64 +16,6 @@ namespace TimePlanner.DataAccess.Repositories
     private readonly IRecurrenceService recurrenceService;
     private readonly ILogger<WorkItemRepository> logger;
 
-    private async Task UpdateArchivedAndRepeating()
-    {
-      var entities = dbContext.WorkItemEntities.Where(i => i.Category != Category.Archived.ToString());
-
-      List<WorkItemEntity>? archived = UpdateArchived(entities);
-      if(archived.Count > 0)
-      {
-        dbContext.UpdateRange(archived);
-      }
-
-      List<WorkItemEntity>? awaken = entities.Where(e =>
-          e.Category == Category.Scheduled.ToString() &&
-          e.NextTime.HasValue &&
-          e.NextTime.Value <= DateTime.Now &&
-          (e.IsOnPause == null || e.IsOnPause.Value == false))
-        .OrderByDescending(e => e.NextTime.Value).ToList();
-
-      if (awaken?.Count > 0)
-      {
-        foreach (var entity in awaken)
-        {
-          // TODO SortForCategoryChange(entities, entity.WorkItemId, Category.Today);
-
-          if (!(entity.IsIfPreviousCompleted.HasValue && entity.IsIfPreviousCompleted.Value))
-          {
-            // TODO CreateNextRecurrentWorkItemInstance(entity);
-          }
-          entity.NextTime = null;
-          entity.Category = Category.Today.ToString();
-        }
-        dbContext.UpdateRange(entities);
-      }
-
-      try
-      {
-        await dbContext.SaveChangesAsync();
-      }
-      catch (Exception ex)
-      {
-        logger.LogError(ex, "Failed to update archived/awaken work items.");
-
-        throw new DataAccessException();
-      }
-    }
-
-    private static List<WorkItemEntity> UpdateArchived(IQueryable<WorkItemEntity> entities)
-    {
-      DateTime archiveThreshold = DateTime.Now.AddDays(-7);
-      var archive = entities.Where(e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreshold.Date)
-        .ToList();
-      foreach (var entity in archive)
-      {
-        entity.Category = Category.Archived.ToString();
-      }
-
-      return archive;
-    }
-
     public WorkItemRepository(
       TimePlannerDbContext dbContext,
       IWorkItemEntityMapper workItemEntityMapper,
@@ -87,8 +29,6 @@ namespace TimePlanner.DataAccess.Repositories
 
     public async Task<List<WorkItem>> GetWorkItemsAsync()
     {
-      await UpdateArchivedAndRepeating();
-
       return await dbContext
         .WorkItemEntities
         .Where(i => i.Category != Category.Archived.ToString())
@@ -136,7 +76,7 @@ namespace TimePlanner.DataAccess.Repositories
       {
         e.SortOrder = ordered[e.WorkItemId].SortOrder;
       }
-      
+
       var entity = new WorkItemEntity
       {
         Category = Category.Today.ToString(),
@@ -162,7 +102,7 @@ namespace TimePlanner.DataAccess.Repositories
 
     public async Task<WorkItem> UpdateWorkItemAsync(
       WorkItem workItem,
-      Dictionary<Guid,SortData>? sortData,
+      Dictionary<Guid, SortData>? sortData,
       WorkItem? repeatedWorkItem)
     {
       IQueryable<WorkItemEntity> entities = dbContext.WorkItemEntities
@@ -175,7 +115,7 @@ namespace TimePlanner.DataAccess.Repositories
       }
 
       workItemEntityMapper.UpdateEntity(entity, workItem);
-      if(sortData != null)
+      if (sortData != null)
       {
         foreach (var e in entities)
         {
@@ -204,7 +144,42 @@ namespace TimePlanner.DataAccess.Repositories
 
       return await GetWorkItemAsync(entity.WorkItemId);
     }
-      
+
+    public async Task UpdateWorkItemsAsync(
+      Dictionary<Guid, (int, Category, DateTime?)> updateData,
+      List<WorkItem> addedWorkItems)
+    {
+      IQueryable<WorkItemEntity> entities = dbContext.WorkItemEntities
+        .Where(i => i.Category != Category.Archived.ToString());
+
+      foreach (var e in entities)
+      {
+        if (updateData.TryGetValue(e.WorkItemId, out var data))
+        {
+          var (sortOrder, category, nextTime) = data;
+          e.SortOrder = sortOrder;
+          e.Category = category.ToString();
+          e.NextTime = nextTime;
+        }
+      }
+      dbContext.UpdateRange(entities);
+      foreach(var workItem in addedWorkItems)
+      {
+        await dbContext.AddAsync(workItemEntityMapper.CreateEntity(workItem));
+      }
+
+      try
+      {
+        await dbContext.SaveChangesAsync();
+      }
+      catch (Exception ex)
+      {
+        logger.LogError(ex, "Failed to update work items.");
+
+        throw new DataAccessException();
+      }
+    }
+
 
     public async Task DeleteWorkItemAsync(Guid workItemId)
     {
