@@ -66,7 +66,7 @@ namespace TimePlanner.DataAccess.Repositories
     public async Task<WorkItem> CreateWorkItemAsync(string name, int sortOrder, Dictionary<Guid, SortData> sortData)
     {
       var entities = dbContext.WorkItemEntities.Where(i => i.Category != Category.Archived.ToString());
-      DateTime archiveThreashold = DateTime.Now.AddDays(-30);
+      DateTime archiveThreashold = DateTime.UtcNow.AddDays(-30);
       foreach (var e in entities)
       {
         e.SortOrder = sortData[e.WorkItemId].SortOrder;
@@ -79,7 +79,7 @@ namespace TimePlanner.DataAccess.Repositories
       var entity = new WorkItemEntity
       {
         Category = Category.Today.ToString(),
-        CreatedAt = DateTime.Now,
+        CreatedAt = DateTime.UtcNow,
         Name = name,
         SortOrder = sortOrder
       };

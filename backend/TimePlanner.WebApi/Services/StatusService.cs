@@ -111,7 +111,7 @@ namespace TimePlanner.WebApi.Services
       }
 
       Status status;
-      if (latestStatus.HasValue && latestStatus.Value.StartedAt.Date.Equals(DateTime.Now.Date))
+      if (latestStatus.HasValue && latestStatus.Value.StartedAt.Date.Equals(DateTime.UtcNow.Date))
       {
         status = CreateStatusBuilder(latestStatus.Value).Build();
       }

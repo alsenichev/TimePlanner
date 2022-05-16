@@ -16,7 +16,7 @@ public class WorkItemService : IWorkItemService
   {
     List<WorkItem> workItems = await workItemRepository.GetWorkItemsAsync();
 
-    DateTime archiveThreshold = DateTime.Now.AddDays(-7);
+    DateTime archiveThreshold = DateTime.UtcNow.AddDays(-7);
 
     // these items will have the modified category
     List<WorkItem> archived = workItems
@@ -28,7 +28,7 @@ public class WorkItemService : IWorkItemService
     List<WorkItem> awaken = workItems.Where(e =>
         e.Category == Category.Scheduled &&
         e.NextTime.HasValue &&
-        e.NextTime.Value <= DateTime.Now &&
+        e.NextTime.Value <= DateTime.UtcNow &&
         (e.IsOnPause == null || e.IsOnPause.Value == false))
       .Select(i => i with { NextTime = null, Category = Category.Today })
       .ToList();
@@ -63,7 +63,7 @@ public class WorkItemService : IWorkItemService
 
     if (targetCategory == Category.Completed)
     {
-      workItem.CompletedAt = DateTime.Now;
+      workItem.CompletedAt = DateTime.UtcNow;
       if (!string.IsNullOrEmpty(workItem.CronExpression))
       {
         repeatedWorkItem = CreateNextRecurrentWorkItemInstance(workItem);
@@ -85,7 +85,7 @@ public class WorkItemService : IWorkItemService
   {
     if ((workItem.MaxRepetitionCount.HasValue && workItem.RepetitionCount.HasValue &&
          workItem.RepetitionCount.Value == workItem.MaxRepetitionCount.Value) ||
-         workItem.RecurrenceEndsOn.HasValue && workItem.RecurrenceEndsOn.Value >= DateTime.Now)
+         workItem.RecurrenceEndsOn.HasValue && workItem.RecurrenceEndsOn.Value >= DateTime.UtcNow)
     {
       return null;
     }
@@ -95,9 +95,9 @@ public class WorkItemService : IWorkItemService
       Id: null,
       Name: workItem.Name,
       Category: Category.Scheduled,
-      CreatedAt: DateTime.Now,
+      CreatedAt: DateTime.UtcNow,
       CompletedAt: null,
-      NextTime: recurrenceService.CalculateNextTime(workItem.CronExpression!, DateTime.Now, DateTime.Now),
+      NextTime: recurrenceService.CalculateNextTime(workItem.CronExpression!, DateTime.UtcNow, DateTime.UtcNow),
       CronExpression: workItem.CronExpression,
       RecurrenceStartsOn: workItem.RecurrenceStartsOn,
       RecurrenceEndsOn: workItem.RecurrenceEndsOn,
@@ -224,7 +224,7 @@ public class WorkItemService : IWorkItemService
     }
 
     DateTime startsOn = workItemRequest.RecurrenceStartsOn.HasValue
-      ? workItemRequest.RecurrenceStartsOn.Value : DateTime.Now;
+      ? workItemRequest.RecurrenceStartsOn.Value : DateTime.UtcNow;
 
     workItem = workItem with 
     {
@@ -235,7 +235,7 @@ public class WorkItemService : IWorkItemService
       IsIfPreviousCompleted = workItemRequest.IsAfterPreviousCompleted,
       MaxRepetitionCount = workItemRequest.MaxRepetitionsCount,
       IsOnPause = workItemRequest.IsOnPause,
-      NextTime = recurrenceService.CalculateNextTime(workItemRequest.CronExpression, startsOn, DateTime.Now)
+      NextTime = recurrenceService.CalculateNextTime(workItemRequest.CronExpression, startsOn, DateTime.UtcNow)
     };
 
     return await workItemRepository.UpdateWorkItemAsync(workItem, sortData, null);

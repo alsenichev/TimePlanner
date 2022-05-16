@@ -4,6 +4,6 @@ namespace TimePlanner.Domain.Services
 {
   public class ProductionTimeProvider : ITimeProvider
   {
-    public DateTime Now => DateTime.Now;
+    public DateTime Now => DateTime.UtcNow;
   }
 }
