@@ -56,6 +56,7 @@ app.UseCors(x => x
   .AllowAnyHeader());
 
 app.UseAuthorization();
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.MapControllers();
