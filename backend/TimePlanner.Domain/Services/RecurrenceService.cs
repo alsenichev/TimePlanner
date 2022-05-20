@@ -18,8 +18,7 @@ namespace TimePlanner.Domain.Services
       try
       {
         var expression = CronExpression.Parse(cronExpression);
-        var next = expression.GetNextOccurrence(new DateTimeOffset(relativeTo), TimeZoneInfo.Local);
-        return next?.DateTime;
+        return expression.GetNextOccurrence(relativeTo);
       }
       catch (CronFormatException)
       {
