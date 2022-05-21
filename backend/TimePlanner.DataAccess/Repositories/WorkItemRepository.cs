@@ -179,7 +179,6 @@ namespace TimePlanner.DataAccess.Repositories
       }
     }
 
-
     public async Task DeleteWorkItemAsync(Guid workItemId, Dictionary<Guid, SortData> sortData)
     {
       var entities = dbContext.WorkItemEntities.Include(i => i.Durations)

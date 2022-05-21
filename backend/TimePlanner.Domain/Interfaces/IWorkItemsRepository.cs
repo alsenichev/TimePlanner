@@ -17,6 +17,10 @@ namespace TimePlanner.Domain.Interfaces
       Dictionary<Guid,SortData>? sortData,
       WorkItem? repeatedWorkItem);
 
+    Task UpdateWorkItemsAsync(
+      Dictionary<Guid, (int, Category, DateTime?)> updateData,
+      List<WorkItem> addedWorkItems);
+
     Task DeleteWorkItemAsync(Guid workItemId, Dictionary<Guid, SortData> sortData);
   }
 }

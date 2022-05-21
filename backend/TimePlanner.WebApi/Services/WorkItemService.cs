@@ -18,20 +18,33 @@ public class WorkItemService : IWorkItemService
 
     DateTime archiveThreshold = DateTime.UtcNow.AddDays(-7);
 
+    Dictionary<Guid, (int, Category, DateTime?)> batch = new Dictionary<Guid, (int, Category, DateTime?)>();
+    foreach (var item in workItems)
+    {
+      batch.Add(item.Id.Value, (item.SortOrder, item.Category, item.NextTime));
+    }
+
     // these items will have the modified category
-    List<WorkItem> archived = workItems
+    var archived = workItems
       .Where(e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreshold.Date)
-      .Select(i => i with { Category = Category.Archived })
-      .ToList();
+      .Select(i => i with { Category = Category.Archived });
+
+    foreach(var item in archived)
+    {
+      batch[item.Id.Value] = (item.SortOrder, Category.Archived, item.NextTime);
+    }
 
     // these will have category and NextTime updated
-    List<WorkItem> awaken = workItems.Where(e =>
+    var awaken = workItems.Where(e =>
         e.Category == Category.Scheduled &&
         e.NextTime.HasValue &&
         e.NextTime.Value <= DateTime.UtcNow &&
-        (e.IsOnPause == null || e.IsOnPause.Value == false))
-      .Select(i => i with { NextTime = null, Category = Category.Today })
-      .ToList();
+        (e.IsOnPause == null || e.IsOnPause.Value == false));
+
+    foreach (var item in awaken)
+    {
+      batch[item.Id.Value] = (item.SortOrder, Category.Today, null);
+    }
 
     ImmutableList<SortData> sortData = workItems.Select(e => CreateSortData(e)).ToImmutableList();
     List<WorkItem> createdItems = new List<WorkItem>();
@@ -48,7 +61,15 @@ public class WorkItemService : IWorkItemService
         }
       }
     }
+    foreach (var item in sortData)
+    {
+      var (sortOrder, category, nextTime) = batch[item.Id];
+      batch[item.Id] = (item.SortOrder, category, nextTime);
+    }
+
+    await workItemRepository.UpdateWorkItemsAsync(batch, createdItems);
   }
+
   private WorkItem UpdateCategory(
     List<WorkItem> workItems,
     WorkItem workItem,
