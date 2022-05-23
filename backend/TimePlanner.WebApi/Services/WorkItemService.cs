@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using TimePlanner.Domain.Exceptions;
 using TimePlanner.Domain.Interfaces;
 using TimePlanner.Domain.Models;
