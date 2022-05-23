@@ -80,7 +80,7 @@ export class TimeTrackingComponent implements OnInit {
     this.timeTrackingService.deleteWorkItem(workItem.id).subscribe(_ =>{
       this.loadWorkItems();
       this.currentWorkItem = undefined;
-      this.messageService.add(`Deleted work item: ${workItem.name}.`);
+      this.messageService.addInfo(`Deleted work item: ${workItem.name}.`);
     });
   }
 
