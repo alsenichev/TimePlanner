@@ -166,7 +166,6 @@ namespace TimePlanner.DataAccess.Repositories
       {
         await dbContext.AddAsync(workItemEntityMapper.CreateEntity(workItem));
       }
-
       try
       {
         await dbContext.SaveChangesAsync();
@@ -178,6 +177,7 @@ namespace TimePlanner.DataAccess.Repositories
         throw new DataAccessException();
       }
     }
+      
 
     public async Task DeleteWorkItemAsync(Guid workItemId, Dictionary<Guid, SortData> sortData)
     {

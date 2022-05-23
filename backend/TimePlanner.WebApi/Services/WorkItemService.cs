@@ -1,4 +1,3 @@
-﻿using System.Collections.Immutable;
 using TimePlanner.Domain.Exceptions;
 using TimePlanner.Domain.Interfaces;
 using TimePlanner.Domain.Models;
@@ -69,7 +68,7 @@ public class WorkItemService : IWorkItemService
 
     await workItemRepository.UpdateWorkItemsAsync(batch, createdItems);
   }
-
+  
   private WorkItem UpdateCategory(
     List<WorkItem> workItems,
     WorkItem workItem,
@@ -130,7 +129,7 @@ public class WorkItemService : IWorkItemService
       Durations: new List<Duration>());
   }
 
-  private WorkItem CleanUpRecurrence(WorkItem workItem)
+private WorkItem CleanUpRecurrence(WorkItem workItem)
   {
     return workItem with
     {
