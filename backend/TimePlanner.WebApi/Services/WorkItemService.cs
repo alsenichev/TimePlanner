@@ -1,4 +1,4 @@
-﻿using TimePlanner.Domain.Exceptions;
+using TimePlanner.Domain.Exceptions;
 using TimePlanner.Domain.Interfaces;
 using TimePlanner.Domain.Models;
 using TimePlanner.Domain.Services;
@@ -11,6 +11,64 @@ public class WorkItemService : IWorkItemService
   private readonly IWorkItemRepository workItemRepository;
   private readonly IRecurrenceService recurrenceService;
 
+  private async Task UpdateArchivedAndRepeating()
+  {
+    List<WorkItem> workItems = await workItemRepository.GetWorkItemsAsync();
+
+    DateTime archiveThreshold = DateTime.UtcNow.AddDays(-7);
+
+    Dictionary<Guid, (int, Category, DateTime?)> batch = new Dictionary<Guid, (int, Category, DateTime?)>();
+    foreach (var item in workItems)
+    {
+      batch.Add(item.Id.Value, (item.SortOrder, item.Category, item.NextTime));
+    }
+
+    // these items will have the modified category
+    var archived = workItems
+      .Where(e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreshold.Date)
+      .Select(i => i with { Category = Category.Archived });
+
+    foreach(var item in archived)
+    {
+      batch[item.Id.Value] = (item.SortOrder, Category.Archived, item.NextTime);
+    }
+
+    // these will have category and NextTime updated
+    var awaken = workItems.Where(e =>
+        e.Category == Category.Scheduled &&
+        e.NextTime.HasValue &&
+        e.NextTime.Value <= DateTime.UtcNow &&
+        (e.IsOnPause == null || e.IsOnPause.Value == false));
+
+    foreach (var item in awaken)
+    {
+      batch[item.Id.Value] = (item.SortOrder, Category.Today, null);
+    }
+
+    ImmutableList<SortData> sortData = workItems.Select(e => CreateSortData(e)).ToImmutableList();
+    List<WorkItem> createdItems = new List<WorkItem>();
+    foreach (WorkItem workItem in awaken)
+    {
+      sortData = SortingService.ChangeCategory(sortData, workItem.Id.Value, Category.Today);
+
+      if (!(workItem.IsIfPreviousCompleted.HasValue && workItem.IsIfPreviousCompleted.Value))
+      {
+        var createdItem = CreateNextRecurrentWorkItemInstance(workItem);
+        if(createdItem != null)
+        {
+          createdItems.Add(createdItem.Value);
+        }
+      }
+    }
+    foreach (var item in sortData)
+    {
+      var (sortOrder, category, nextTime) = batch[item.Id];
+      batch[item.Id] = (item.SortOrder, category, nextTime);
+    }
+
+    await workItemRepository.UpdateWorkItemsAsync(batch, createdItems);
+  }
+  
   private WorkItem UpdateCategory(
     List<WorkItem> workItems,
     WorkItem workItem,
@@ -25,7 +83,7 @@ public class WorkItemService : IWorkItemService
 
     if (targetCategory == Category.Completed)
     {
-      workItem.CompletedAt = DateTime.Now;
+      workItem.CompletedAt = DateTime.UtcNow;
       if (!string.IsNullOrEmpty(workItem.CronExpression))
       {
         repeatedWorkItem = CreateNextRecurrentWorkItemInstance(workItem);
@@ -47,7 +105,7 @@ public class WorkItemService : IWorkItemService
   {
     if ((workItem.MaxRepetitionCount.HasValue && workItem.RepetitionCount.HasValue &&
          workItem.RepetitionCount.Value == workItem.MaxRepetitionCount.Value) ||
-         workItem.RecurrenceEndsOn.HasValue && workItem.RecurrenceEndsOn.Value >= DateTime.Now)
+         workItem.RecurrenceEndsOn.HasValue && workItem.RecurrenceEndsOn.Value >= DateTime.UtcNow)
     {
       return null;
     }
@@ -57,9 +115,9 @@ public class WorkItemService : IWorkItemService
       Id: null,
       Name: workItem.Name,
       Category: Category.Scheduled,
-      CreatedAt: DateTime.Now,
+      CreatedAt: DateTime.UtcNow,
       CompletedAt: null,
-      NextTime: recurrenceService.CalculateNextTime(workItem.CronExpression!, DateTime.Now, DateTime.Now),
+      NextTime: recurrenceService.CalculateNextTime(workItem.CronExpression!, DateTime.UtcNow, DateTime.UtcNow),
       CronExpression: workItem.CronExpression,
       RecurrenceStartsOn: workItem.RecurrenceStartsOn,
       RecurrenceEndsOn: workItem.RecurrenceEndsOn,
@@ -71,7 +129,7 @@ public class WorkItemService : IWorkItemService
       Durations: new List<Duration>());
   }
 
-  public WorkItem CleanUpRecurrence(WorkItem workItem)
+private WorkItem CleanUpRecurrence(WorkItem workItem)
   {
     return workItem with
     {
@@ -108,9 +166,10 @@ public class WorkItemService : IWorkItemService
     this.recurrenceService = recurrenceService;
   }
 
-  public Task<List<WorkItem>> GetWorkItemsAsync()
+  public async Task<List<WorkItem>> GetWorkItemsAsync()
   {
-    return workItemRepository.GetWorkItemsAsync();
+    await UpdateArchivedAndRepeating();
+    return await workItemRepository.GetWorkItemsAsync();
   }
 
   public Task<WorkItem> GetWorkItemAsync(Guid workItemId)
@@ -118,9 +177,15 @@ public class WorkItemService : IWorkItemService
     return workItemRepository.GetWorkItemAsync(workItemId);
   }
 
-  public Task<WorkItem> CreateWorkItemAsync(CreateWorkItemRequest request)
+  public async Task<WorkItem> CreateWorkItemAsync(CreateWorkItemRequest request)
   {
-    return workItemRepository.CreateWorkItemAsync(request.Name);
+    List<WorkItem> workItems = await workItemRepository.GetWorkItemsAsync();
+    List<SortData> sortModels = workItems.Select(e => CreateSortData(e)).ToList();
+    var tempGuid = Guid.NewGuid();
+    var sortModel = new SortData(tempGuid, Category.Today, 0);
+    Dictionary<Guid, SortData> ordered = SortingService.AddItem(sortModels, sortModel).ToDictionary(i => i.Id);
+    int sortOrder = ordered[tempGuid].SortOrder;
+    return await workItemRepository.CreateWorkItemAsync(request.Name, sortOrder, ordered);
   }
 
   public async Task<WorkItem> UpdateWorkItemAsync(UpdateWorkItemRequest workItemRequest)
@@ -179,7 +244,7 @@ public class WorkItemService : IWorkItemService
     }
 
     DateTime startsOn = workItemRequest.RecurrenceStartsOn.HasValue
-      ? workItemRequest.RecurrenceStartsOn.Value : DateTime.Now;
+      ? workItemRequest.RecurrenceStartsOn.Value : DateTime.UtcNow;
 
     workItem = workItem with 
     {
@@ -190,15 +255,24 @@ public class WorkItemService : IWorkItemService
       IsIfPreviousCompleted = workItemRequest.IsAfterPreviousCompleted,
       MaxRepetitionCount = workItemRequest.MaxRepetitionsCount,
       IsOnPause = workItemRequest.IsOnPause,
-      NextTime = recurrenceService.CalculateNextTime(workItemRequest.CronExpression, startsOn, DateTime.Now)
+      NextTime = recurrenceService.CalculateNextTime(workItemRequest.CronExpression, startsOn, DateTime.UtcNow)
     };
 
     return await workItemRepository.UpdateWorkItemAsync(workItem, sortData, null);
 
   }
 
-  public Task DeleteWorkItemAsync(Guid workItemId)
+  public async Task DeleteWorkItemAsync(Guid workItemId)
   {
-    return workItemRepository.DeleteWorkItemAsync(workItemId);
+    List<WorkItem> workItems = await workItemRepository.GetWorkItemsAsync();
+    WorkItem workItem = workItems.SingleOrDefault(i => i.Id == workItemId);
+    if (workItem.Id == null)
+    {
+      throw new EntityMissingException();
+    }
+
+    List<SortData> sortModels = workItems.Select(e => CreateSortData(e)).ToList();
+    Dictionary<Guid, SortData> ordered = SortingService.DeleteItem(sortModels, workItemId).ToDictionary(i => i.Id);
+    await workItemRepository.DeleteWorkItemAsync(workItemId, ordered);
   }
 }

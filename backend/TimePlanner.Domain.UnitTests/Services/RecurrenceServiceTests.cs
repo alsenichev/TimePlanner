@@ -245,7 +245,7 @@ namespace TimePlanner.Domain.UnitTests.Services
     public void TestInvalidDaysAfterCompletion(string customCronExpression)
     {
       Assert.Throws<ApplicationException>(
-        () => recurrenceService.CalculateNextTime(customCronExpression, DateTime.Now, DateTime.Now));
+        () => recurrenceService.CalculateNextTime(customCronExpression, DateTime.UtcNow, DateTime.UtcNow));
     }
   }
 }

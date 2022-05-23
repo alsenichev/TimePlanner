@@ -7,7 +7,7 @@ namespace TimePlanner.Domain.Services
 
   public static class SortingService
   {
-    private static List<SortData> PrepareSource(List<SortData> source)
+    private static List<SortData> PrepareSource(IList<SortData> source)
     {
       return source.OrderBy(i => i.Category).ThenBy(i => i.SortOrder).Select((d, i) =>
       {
@@ -128,7 +128,7 @@ namespace TimePlanner.Domain.Services
       }
     }
 
-    public static ImmutableList<SortData> DeleteItem(List<SortData> rawSource, Guid itemId)
+    public static ImmutableList<SortData> DeleteItem(IList<SortData> rawSource, Guid itemId)
     {
       var source = PrepareSource(rawSource);
       SortData? item = source.SingleOrDefault(i => i.Id == itemId);
@@ -151,7 +151,7 @@ namespace TimePlanner.Domain.Services
     }
 
     public static ImmutableList<SortData> ChangeCategory(
-      List<SortData> rawSource,
+      IList<SortData> rawSource,
       Guid itemId,
       Category targetCategory)
     {
