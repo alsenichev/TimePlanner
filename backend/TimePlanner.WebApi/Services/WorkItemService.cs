@@ -25,13 +25,12 @@ public class WorkItemService : IWorkItemService
     }
 
     // these items will have the modified category
-    var archived = workItems
-      .Where(e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreshold.Date)
-      .Select(i => i with { Category = Category.Archived });
+    var archived = workItems.Where(
+      e => e.CompletedAt.HasValue && e.CompletedAt.Value.Date < archiveThreshold.Date);
 
     foreach(var item in archived)
     {
-      batch[item.Id.Value] = (item.SortOrder, Category.Archived, item.NextTime);
+      batch[item.Id.Value] = (int.MaxValue, Category.Archived, null);
     }
 
     // these will have category and NextTime updated
@@ -51,14 +50,10 @@ public class WorkItemService : IWorkItemService
     foreach (WorkItem workItem in awaken)
     {
       sortData = SortingService.ChangeCategory(sortData, workItem.Id.Value, Category.Today);
-
-      if (!(workItem.IsIfPreviousCompleted.HasValue && workItem.IsIfPreviousCompleted.Value))
+      var createdItem = CreateNextRecurrentWorkItemInstance(workItem);
+      if(createdItem != null)
       {
-        var createdItem = CreateNextRecurrentWorkItemInstance(workItem);
-        if(createdItem != null)
-        {
-          createdItems.Add(createdItem.Value);
-        }
+        createdItems.Add(createdItem.Value);
       }
     }
     foreach (var item in sortData)
@@ -84,7 +79,7 @@ public class WorkItemService : IWorkItemService
 
     if (targetCategory == Category.Completed)
     {
-      workItem.CompletedAt = DateTime.UtcNow;
+      result = result with { CompletedAt = DateTime.UtcNow };
       if (!string.IsNullOrEmpty(workItem.CronExpression))
       {
         repeatedWorkItem = CreateNextRecurrentWorkItemInstance(workItem);
@@ -104,6 +99,12 @@ public class WorkItemService : IWorkItemService
 
   private WorkItem? CreateNextRecurrentWorkItemInstance(WorkItem workItem)
   {
+    if (workItem.IsIfPreviousCompleted.HasValue &&
+      workItem.IsIfPreviousCompleted.Value &&
+      workItem.Category != Category.Completed)
+    {
+      return null;
+    }
     if ((workItem.MaxRepetitionCount.HasValue && workItem.RepetitionCount.HasValue &&
          workItem.RepetitionCount.Value == workItem.MaxRepetitionCount.Value) ||
          workItem.RecurrenceEndsOn.HasValue && workItem.RecurrenceEndsOn.Value >= DateTime.UtcNow)
