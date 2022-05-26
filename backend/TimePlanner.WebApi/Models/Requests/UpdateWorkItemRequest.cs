@@ -1,19 +1,29 @@
-﻿using TimePlanner.Domain.Models;
+﻿using System.Text.Json.Serialization;
+using TimePlanner.Domain.Models;
 
 namespace TimePlanner.WebApi.Models.Requests
 {
-  public record UpdateWorkItemRequest(
-    Guid id,
-    string name,
-    List<DurationRequest> durations,
-    string category,
-    WakingUpRequest? wakingUp,
-    int? recurrenceDays,
-    DateTime createdAt,
-    DateTime? completedAt,
-    int sortOrder);
+  public class UpdateWorkItemRequest
+  {
+    public Guid Id { get; set; }
 
-  public record struct DurationRequest(int? id, string date, string value);
+    public string Name { get; set; } = null!;
 
-  public record struct WakingUpRequest(string when, string where);
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public Category Category { get; set; }
+
+    public int SortOrder { get; set; }
+
+    public string? CronExpression { get; set; }
+
+    public DateTime? RecurrenceStartsOn { get; set; }
+
+    public DateTime? RecurrenceEndsOn { get; set; }
+
+    public bool? IsAfterPreviousCompleted { get; set; }
+
+    public int? MaxRepetitionsCount { get; set; }
+
+    public bool? IsOnPause { get; set; }
+  }
 }

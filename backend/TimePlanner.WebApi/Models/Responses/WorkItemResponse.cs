@@ -18,20 +18,23 @@ namespace TimePlanner.WebApi.Models.Responses
 
     public DateTime? CompletedAt { get; set; }
 
-    public int? RecurrenceDays { get; set; }
+    public string? CronExpression { get; set; }
+
+    public DateTime? RecurrenceStartsOn { get; set; }
+
+    public DateTime? RecurrenceEndsOn { get; set; }
+
+    public int? MaxRepetitionCount { get; set; }
+
+    public bool? IsAfterPreviousCompleted { get; set; }
+
+    public bool? IsOnPause { get; set; }
 
     public int SortOrder { get; set; }
 
-    public WakingUpResponse? WakingUp { get; set; }
+    public DateTime? NextTime { get; set; }
   }
 
   public record struct DurationResponse(int id, string date, string Value);
 
-  public class WakingUpResponse
-  {
-    public string When { get; set; }
-
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public Category Where { get; set; }
-  }
 }

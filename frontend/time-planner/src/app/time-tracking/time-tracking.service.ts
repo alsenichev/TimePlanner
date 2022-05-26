@@ -4,7 +4,7 @@ import { Status } from './models/status';
 import { MessageService } from '../messages/message.service';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
-import { WorkItem } from './models/work-item';
+import { WorkItem, WorkItemUpdateRequest } from './models/work-item';
 
 @Injectable({
   providedIn: 'root'
@@ -34,7 +34,7 @@ export class TimeTrackingService {
       );
   }
 
-  updateWorkItem(workItem: WorkItem): Observable<WorkItem>{
+  updateWorkItem(workItem: WorkItemUpdateRequest): Observable<WorkItem>{
     let uri = `${environment.apiUrl}/workItems/${workItem.id}`;
     return this.http.put<WorkItem>(uri, workItem)
     .pipe(
@@ -53,12 +53,12 @@ export class TimeTrackingService {
   private handleError(error: HttpErrorResponse) {
     if (error.status === 0) {
       // A client-side or network error occurred. Handle it accordingly.
-      this.messageService.add('An error occurred: ' + error.error);
+      this.messageService.addError('An error occurred: ' + error.error);
     } else {
       // The backend returned an unsuccessful response code.
       // The response body may contain clues as to what went wrong.
       let msg: string = `Backend returned code ${error.status}, body was ${JSON.stringify(error)}`;
-      this.messageService.add(msg);
+      this.messageService.addError(msg);
     }
     // Return an observable with a user-facing error message.
     return throwError(() => new Error('Failed to handle the request.'));

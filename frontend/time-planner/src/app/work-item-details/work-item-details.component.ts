@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { WorkItem } from '../time-tracking/models/work-item';
+import { WorkItem, WorkItemUpdateRequest } from '../time-tracking/models/work-item';
 
 @Component({
   selector: 'app-work-item-details',
@@ -9,26 +9,24 @@ import { WorkItem } from '../time-tracking/models/work-item';
 export class WorkItemDetailsComponent {
 
   @Output() workItemEdit = new EventEmitter<WorkItem>();
-  @Output() workItemChanged = new EventEmitter<WorkItem>();
+  @Output() workItemChanged = new EventEmitter<WorkItemUpdateRequest>();
 
   @Input()
   get workItem(): WorkItem { return this._workItem; }
   set workItem(workItem: WorkItem) {
     this._workItem = workItem;
-    this._isComplete = workItem.completedAt != undefined
+    this._isComplete = workItem.category == 'Completed'
   }
 
   get isComplete(): boolean { return this._isComplete; }
   set isComplete(isComplete: boolean){
-    this._isComplete= this.isComplete;
+    this._isComplete = this.isComplete;
     if(isComplete){
-      this._workItem.completedAt = new Date().toJSON();
       this._workItem.category = 'Completed';
     }else{
-      this._workItem.completedAt = undefined;
       this._workItem.category = 'Today';
     }
-    this.workItemChanged.emit(this._workItem);
+    this.emitChanged();
   }
 
   _workItem:WorkItem;
@@ -36,20 +34,37 @@ export class WorkItemDetailsComponent {
     
   constructor() { }
 
+  emitChanged(){
+    let request : WorkItemUpdateRequest = {
+      id: this._workItem.id,
+      name: this._workItem.name,
+      updateRecurrence: false,
+      cronExpression: this._workItem.cronExpression,
+      isAfterPreviousCompleted: this._workItem.isAfterPreviousCompleted,
+      maxRepetetionsCount: this._workItem.maxRepetetionsCount,
+      recurrenceStartsOn: this._workItem.recurrenceStartsOn,
+      recurrenceEndsOn: this._workItem.recurrenceEndsOn,
+      isOnPause: this._workItem.isOnPause,
+      category: this._workItem.category,
+      sortOrder: this._workItem.sortOrder,
+    };
+    this.workItemChanged.emit(request);
+  }
+
   onEditWorkItem(){
     this.workItemEdit.emit(this._workItem);
   }
 
   today(){
     this._workItem.category = "Today";
-    this.workItemChanged.emit(this._workItem)
+    this.emitChanged();
   }
   tomorrow(){
     this._workItem.category = "Tomorrow";
-    this.workItemChanged.emit(this._workItem)
+    this.emitChanged();
   }
   nextWeek(){
     this._workItem.category = "NextWeek";
-    this.workItemChanged.emit(this._workItem)
+    this.emitChanged();
   }
 }

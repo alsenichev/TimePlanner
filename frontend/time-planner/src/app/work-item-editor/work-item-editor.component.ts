@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { WorkItem } from '../time-tracking/models/work-item';
+import { NgbDateStruct } from '@ng-bootstrap/ng-bootstrap/datepicker/ngb-date-struct';
+import { WorkItem, WorkItemUpdateRequest } from '../time-tracking/models/work-item';
 
 @Component({
   selector: 'app-work-item-editor',
@@ -9,7 +10,7 @@ import { WorkItem } from '../time-tracking/models/work-item';
 })
 export class WorkItemEditorComponent {
   
-  @Output() editComplete = new EventEmitter<WorkItem>();
+  @Output() editComplete = new EventEmitter<WorkItemUpdateRequest>();
   @Output() workItemDeleted = new EventEmitter<WorkItem>();
 
   @Input()
@@ -18,15 +19,15 @@ export class WorkItemEditorComponent {
     if(workItem != undefined){
       this.workItemForm.patchValue({
         name: workItem.name,
-        category: workItem.category,
-        recurrenceDays: workItem.recurrenceDays,
-        wakingUp:{
-          when: workItem.wakingUp?.when,
-          where: workItem.wakingUp?.where
-        }
+        cronExpression: workItem.cronExpression,
+        isAfterPreviousCompleted: workItem.isAfterPreviousCompleted,
+        startDate: workItem.recurrenceStartsOn
       });
       this._currentWorkItem = workItem;
       this.formVisible = true;
+    }
+    else{
+      this.formVisible = false;
     }
   }
   _currentWorkItem: WorkItem;
@@ -36,12 +37,9 @@ export class WorkItemEditorComponent {
 
   workItemForm = this.fb.group({
     name: ['', Validators.required],
-    category: [''],
-    recurrenceDays: [''],
-    wakingUp: this.fb.group({
-      when: [''],
-      where: ['']
-    })
+    cronExpression: [''],
+    isAfterPreviousCompleted: [''],
+    startDate: ['']
   });
 
   cancel(){
@@ -54,20 +52,25 @@ export class WorkItemEditorComponent {
   }
 
   onSubmit(){
-    let workItem : WorkItem = {
-      id: this.currentWorkItem!.id,
+    let workItemRequest : WorkItemUpdateRequest = {
+      id: this.currentWorkItem.id,
       name: this.workItemForm.value.name,
-      category: this.workItemForm.value.category,
-      recurrenceDays: this.workItemForm.value.recurrenceDays,
-      wakingUp: this.workItemForm.value.wakingUp?.when != undefined && this.workItemForm.value.wakingUp?.where != undefined ? {
-        when: this.workItemForm.value.wakingUp.when,
-        where: this.workItemForm.value.wakingUp.where
-      } : undefined,
-      durations: this.currentWorkItem!.durations,
-      sortOrder: this.currentWorkItem!.sortOrder,
-      completedAt: this.currentWorkItem!.completedAt
+      updateRecurrence: this.workItemForm.value.cronExpression != undefined,
+      cronExpression: this.workItemForm.value.cronExpression,
+      isAfterPreviousCompleted: this.workItemForm.value.isAfterPreviousCompleted,
+      maxRepetetionsCount: undefined,
+      recurrenceStartsOn: this.toModel(this.workItemForm.value.startDate),
+      recurrenceEndsOn: undefined,
+      category: this.currentWorkItem.category,
+      isOnPause: undefined,
+      sortOrder: this.currentWorkItem.sortOrder,
     };
     this.formVisible = false;
-    this.editComplete.emit(workItem);
+    this.editComplete.emit(workItemRequest);
+  }
+
+  toModel(date: NgbDateStruct | null): string | null {
+    //return date ? date.day + this.DELIMITER + date.month + this.DELIMITER + date.year : null;
+    return date ? new Date(date.year, date.month, date.day).toISOString() : null;
   }
 }

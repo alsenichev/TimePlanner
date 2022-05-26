@@ -1,4 +1,4 @@
-﻿namespace TimePlanner.Domain.Utils
+﻿namespace TimePlanner.Domain.Interfaces
 {
   /// <summary>
   /// Hides the current date time
@@ -8,6 +8,6 @@
     /// <summary>
     /// Get the current DateTime value.
     /// </summary>
-    public DateTime Now => DateTime.Now;
+    public DateTime Now { get; }
   }
 }

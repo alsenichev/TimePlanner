@@ -1,17 +1,17 @@
 ﻿using System.Collections.Immutable;
 using TimePlanner.Domain.Models;
 
-namespace TimePlanner.Domain.Utils
+namespace TimePlanner.Domain.Services
 {
   public record struct SortData(Guid Id, Category Category, int SortOrder);
 
-  public static class Sorting
+  public static class SortingService
   {
-    private static List<SortData> PrepareSource(List<SortData> source)
+    private static List<SortData> PrepareSource(IList<SortData> source)
     {
       return source.OrderBy(i => i.Category).ThenBy(i => i.SortOrder).Select((d, i) =>
       {
-        d.SortOrder = d.Category == Category.Completed ? int.MaxValue : i;
+        d.SortOrder = d.Category == Category.Completed || d.Category == Category.Scheduled ? int.MaxValue : i;
         return d;
       }).ToList();
     }
@@ -25,7 +25,7 @@ namespace TimePlanner.Domain.Utils
       source.Insert(index, item);
       for (var i = index + 1; i < source.Count; i++)
       {
-        if (source[i].Category != Category.Completed)
+        if (source[i].Category != Category.Completed && source[i].Category != Category.Scheduled)
         {
           int sortOrder = source[i].SortOrder + 1;
           source[i] = source[i] with { SortOrder = sortOrder };
@@ -35,7 +35,7 @@ namespace TimePlanner.Domain.Utils
       return source.ToImmutableList();
     }
 
-    private static ImmutableList<SortData> AddTodayInternal(SortData item, List<SortData> source)
+    private static ImmutableList<SortData> AddTodayInternal(List<SortData> source, SortData item)
     {
       // empty list or no today items: add to the top
       if (source.Count == 0 || source.All(i => i.Category != Category.Today))
@@ -50,10 +50,13 @@ namespace TimePlanner.Domain.Utils
       return InsertAndUpdateIndexers(source, item, lastInCategory + 1);
     }
 
-    private static ImmutableList<SortData> AddTomorrowInternal(SortData item, List<SortData> source)
+    private static ImmutableList<SortData> AddTomorrowInternal(List<SortData> source, SortData item)
     {
-      // empty list or only next week or completed: add to the top
-      if (source.Count == 0 || source.All(i => i.Category == Category.NextWeek || i.Category == Category.Completed))
+      // empty list or only next week or completed/scheduled: add to the top
+      if (source.Count == 0 ||
+          source.All(i => i.Category == Category.NextWeek ||
+                          i.Category == Category.Completed ||
+                          i.Category == Category.Scheduled))
       {
         return InsertAndUpdateIndexers(source, item, 0);
       }
@@ -65,15 +68,16 @@ namespace TimePlanner.Domain.Utils
         return InsertAndUpdateIndexers(source, item, tomorrowLast + 1);
       }
 
-      // no tomorrow, not empty, not only next week and completed: add to the bottom of today
+      // add to the bottom of today
       var todayLast = source.FindLastIndex(p => p.Category == Category.Today);
       return InsertAndUpdateIndexers(source, item, todayLast + 1);
     }
 
-    private static ImmutableList<SortData> AddNextWeekInternal(SortData item, List<SortData> source)
+    private static ImmutableList<SortData> AddNextWeekInternal(List<SortData> source, SortData item)
     {
-      // empty list or only completed: add to the top
-      if (source.Count == 0 || source.All(i => i.Category == Category.Completed))
+      // empty list or only completed/scheduled: add to the top
+      if (source.Count == 0 || source.All(
+            i => i.Category == Category.Completed || i.Category == Category.Scheduled))
       {
         return InsertAndUpdateIndexers(source, item, 0);
       }
@@ -85,12 +89,19 @@ namespace TimePlanner.Domain.Utils
         return InsertAndUpdateIndexers(source, item, nextWeekLast + 1);
       }
 
-      // no next week, not empty, not only completed: add to the bottom of today or tomorrow
+      // add to the bottom of today or tomorrow
       var todayLast = source.FindLastIndex(p => p.Category == Category.Today || p.Category == Category.Tomorrow);
       return InsertAndUpdateIndexers(source, item, todayLast + 1);
     }
 
-    private static ImmutableList<SortData> AddCompletedInternal(SortData item, List<SortData> source)
+    private static ImmutableList<SortData> AddCompletedInternal(List<SortData> source, SortData item)
+    {
+      item.SortOrder = int.MaxValue;
+      source.Add(item);
+      return source.ToImmutableList();
+    }
+
+    private static ImmutableList<SortData> AddScheduledInternal(List<SortData> source, SortData item)
     {
       item.SortOrder = int.MaxValue;
       source.Add(item);
@@ -99,70 +110,25 @@ namespace TimePlanner.Domain.Utils
 
     public static ImmutableList<SortData> AddItem(List<SortData> source, SortData item)
     {
+      var preparedSource = PrepareSource(source);
       switch (item.Category)
       {
         case Category.Today:
-          return AddToday(source, item);
+          return AddTodayInternal(preparedSource, item);
         case Category.Tomorrow:
-          return AddTomorrow(source, item);
+          return AddTomorrowInternal(preparedSource, item);
         case Category.NextWeek:
-          return AddNextWeek(source, item);
+          return AddNextWeekInternal(preparedSource, item);
         case Category.Completed:
-          return AddCompleted(source, item);
+          return AddCompletedInternal(preparedSource, item);
+        case Category.Scheduled:
+          return AddScheduledInternal(preparedSource, item);
         default:
           throw new ArgumentOutOfRangeException();
       }
     }
 
-    public static ImmutableList<SortData> AddToday(List<SortData> rawSource, SortData item)
-    {
-      if (item.Category != Category.Today)
-      {
-        throw new ApplicationException($"The item should belong to {Category.Today} category.");
-      }
-
-      var source = PrepareSource(rawSource);
-
-      return AddTodayInternal(item, source);
-    }
-
-    public static ImmutableList<SortData> AddTomorrow(List<SortData> rawSource, SortData item)
-    {
-      if (item.Category != Category.Tomorrow)
-      {
-        throw new ApplicationException($"The item should belong to {Category.Tomorrow} category.");
-      }
-
-      var source = PrepareSource(rawSource);
-
-      return AddTomorrowInternal(item, source);
-    }
-
-    public static ImmutableList<SortData> AddNextWeek(List<SortData> rawSource, SortData item)
-    {
-      if (item.Category != Category.NextWeek)
-      {
-        throw new ApplicationException($"The item should belong to {Category.NextWeek} category.");
-      }
-
-      var source = PrepareSource(rawSource);
-
-      return AddNextWeekInternal(item, source);
-    }
-
-    public static ImmutableList<SortData> AddCompleted(List<SortData> rawSource, SortData item)
-    {
-      if (item.Category != Category.Completed)
-      {
-        throw new ApplicationException($"The item should belong to {Category.Completed} category.");
-      }
-
-      item.SortOrder = int.MaxValue;
-      var source = PrepareSource(rawSource);
-      return AddCompletedInternal(item, source);
-    }
-
-    public static ImmutableList<SortData> DeleteItem(List<SortData> rawSource, Guid itemId)
+    public static ImmutableList<SortData> DeleteItem(IList<SortData> rawSource, Guid itemId)
     {
       var source = PrepareSource(rawSource);
       SortData? item = source.SingleOrDefault(i => i.Id == itemId);
@@ -174,7 +140,7 @@ namespace TimePlanner.Domain.Utils
       source.Remove(item.Value);
       for (var i = item.Value.SortOrder; i < source.Count; i++)
       {
-        if (source[i].Category != Category.Completed)
+        if (source[i].Category != Category.Completed && source[i].Category != Category.Scheduled)
         {
           var sortOrder = source[i].SortOrder - 1;
           source[i] = source[i] with { SortOrder = sortOrder };
@@ -185,7 +151,7 @@ namespace TimePlanner.Domain.Utils
     }
 
     public static ImmutableList<SortData> ChangeCategory(
-      List<SortData> rawSource,
+      IList<SortData> rawSource,
       Guid itemId,
       Category targetCategory)
     {
@@ -194,13 +160,15 @@ namespace TimePlanner.Domain.Utils
       switch (targetCategory)
       {
         case Category.Today:
-          return AddTodayInternal(item, deleted);
+          return AddTodayInternal(deleted, item);
         case Category.Tomorrow:
-          return AddTomorrowInternal(item, deleted);
+          return AddTomorrowInternal(deleted, item);
         case Category.NextWeek:
-          return AddNextWeekInternal(item, deleted);
+          return AddNextWeekInternal(deleted, item);
         case Category.Completed:
-          return AddCompletedInternal(item, deleted);
+          return AddCompletedInternal(deleted, item);
+        case Category.Scheduled:
+          return AddScheduledInternal(deleted, item);
         default:
           throw new ArgumentOutOfRangeException(nameof(targetCategory), targetCategory, null);
       }
@@ -208,7 +176,7 @@ namespace TimePlanner.Domain.Utils
 
     public static ImmutableList<SortData> ChangeSortOrder(List<SortData> rawSource, SortData item, int diff)
     {
-      if (item.Category == Category.Completed)
+      if (item.Category == Category.Completed || item.Category == Category.Scheduled)
       {
         throw new ApplicationException($"Reordering {item.Category} category is not supported.");
       }

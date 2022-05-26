@@ -27,7 +27,7 @@ namespace TimePlanner.Domain.Services
       TimeSpanValue depositUpdate,
       TimeSpanValue pauseUpdate)
     {
-      var now = DateTime.Now;
+      var now = DateTime.UtcNow;
       var requestedDate = DateOnly.FromDateTime(now);
       var startedAtDate = DateOnly.FromDateTime(startedAt);
       if (!requestedDate.Equals(startedAtDate))
@@ -72,7 +72,7 @@ namespace TimePlanner.Domain.Services
 
     public static StatusBuilder Of(TimeSpanValue deposit)
     {
-      var builder = new StatusBuilder(null, deposit, DateTime.Now);
+      var builder = new StatusBuilder(null, deposit, DateTime.UtcNow);
       builder.timePool.Increase(deposit);
       return builder;
     }
@@ -95,7 +95,7 @@ namespace TimePlanner.Domain.Services
 
     public StatusBuilder StartBreak()
     {
-      breakStartedAt = DateTime.Now;
+      breakStartedAt = DateTime.UtcNow;
       return this;
     }
 
@@ -106,7 +106,7 @@ namespace TimePlanner.Domain.Services
         return this;
       }
 
-      var now = DateTime.Now;
+      var now = DateTime.UtcNow;
       var requestedDate = DateOnly.FromDateTime(now);
       var breakAtDate = DateOnly.FromDateTime(breakStartedAt.Value);
       if (!requestedDate.Equals(breakAtDate))
