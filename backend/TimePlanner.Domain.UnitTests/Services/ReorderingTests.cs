@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
 using NUnit.Framework;
 using TimePlanner.Domain.Models;
+using TimePlanner.Domain.Services;
 using TimePlanner.Domain.Utils;
 
 namespace TimePlanner.Domain.UnitTests.Utils
@@ -34,19 +35,24 @@ namespace TimePlanner.Domain.UnitTests.Utils
         result.Add(new SortData(Guid.NewGuid(),Category.Completed, result.Count));
       }
 
+      for (var i = 0; i < random.Next(minItems, 25); i++)
+      {
+        result.Add(new SortData(Guid.NewGuid(), Category.Scheduled, result.Count));
+      }
+
       return result.ToImmutableList();
     }
 
     private static void VerifyInvariants(ImmutableList<SortData> result)
     {
-      // The expected result is the ordered list with adjacent correct sortOrders (int max value for Completed)
-      var activeCount = result.Count(i => i.Category != Category.Completed);
+      // The expected result is the ordered list with adjacent correct sortOrders (int max value for Completed/Scheduled)
+      var activeCount = result.Count(i => i.Category != Category.Completed && i.Category != Category.Scheduled);
       for (var i = 0; i < activeCount; i++)
       {
         Assert.AreEqual(i, result[i].SortOrder);
       }
 
-      foreach (var item in result.Where(i => i.Category == Category.Completed))
+      foreach (var item in result.Where(i => i.Category == Category.Completed || i.Category == Category.Scheduled))
       {
         Assert.AreEqual(int.MaxValue, item.SortOrder);
       }
@@ -69,7 +75,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(0);
       SortData item = new SortData(Guid.NewGuid(), Category.Today, 0);
 
-      ImmutableList<SortData> result = Sorting.AddToday(source.ToList(), item);
+      ImmutableList<SortData> result = SortingService.AddItem(source.ToList(), item);
 
       VerifyInvariants(result);
       int updatedSortOrder = result.Single(p => p.Id == item.Id).SortOrder;
@@ -93,7 +99,10 @@ namespace TimePlanner.Domain.UnitTests.Utils
       }
 
       // test lower items are increased
-      var changed = source.Where(p => p.Category != Category.Today && p.Category != Category.Completed).ToList();
+      var changed = source.Where(
+        p => p.Category != Category.Today &&
+             p.Category != Category.Completed &&
+             p.Category != Category.Scheduled).ToList();
       if (changed.Count > 0)
       {
         VerifyOrderChange(changed, result, 1);
@@ -106,7 +115,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(0);
       SortData item = new SortData(Guid.NewGuid(), Category.Tomorrow, 0);
 
-      ImmutableList<SortData> result = Sorting.AddTomorrow(source.ToList(), item);
+      ImmutableList<SortData> result = SortingService.AddItem(source.ToList(), item);
 
       VerifyInvariants(result);
       int updatedSortOrder = result.Single(p => p.Id == item.Id).SortOrder;
@@ -151,7 +160,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(0);
       SortData item = new SortData(Guid.NewGuid(), Category.NextWeek, 0);
 
-      ImmutableList<SortData> result = Sorting.AddNextWeek(source.ToList(), item);
+      ImmutableList<SortData> result = SortingService.AddItem(source.ToList(), item);
 
       VerifyInvariants(result);
       int updatedSortOrder = result.Single(p => p.Id == item.Id).SortOrder;
@@ -164,10 +173,10 @@ namespace TimePlanner.Domain.UnitTests.Utils
       }
       else
       {
-        var sourceCompletedFirst = source.FindIndex(i => i.Category == Category.Completed);
-        if (sourceCompletedFirst > -1)
+        var sourceUnsortedFirst = source.FindIndex(i => i.Category == Category.Completed || i.Category == Category.Scheduled);
+        if (sourceUnsortedFirst > -1)
         {
-          Assert.AreEqual(sourceCompletedFirst, updatedSortOrder);
+          Assert.AreEqual(sourceUnsortedFirst, updatedSortOrder);
         }
         else
         {
@@ -176,7 +185,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       }
 
       // test upper items ure untouched
-      var unchanged = source.Where(p => p.Category != Category.Completed).ToList();
+      var unchanged = source.Where(p => p.Category != Category.Completed && p.Category != Category.Scheduled).ToList();
       if (unchanged.Count > 0)
       {
         VerifyOrderChange(unchanged, result, 0);
@@ -190,7 +199,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(0);
       SortData item = new SortData(Guid.NewGuid(), Category.Completed, 0);
 
-      ImmutableList<SortData> result = Sorting.AddCompleted(source.ToList(), item);
+      ImmutableList<SortData> result = SortingService.AddItem(source.ToList(), item);
 
       VerifyInvariants(result);
 
@@ -198,12 +207,31 @@ namespace TimePlanner.Domain.UnitTests.Utils
       Assert.AreEqual(int.MaxValue, result.Single(p => p.Id == item.Id).SortOrder);
 
       // no indexes should have changed
-      VerifyOrderChange(source.Where(p => p.Category != Category.Completed).ToList(), result, 0);
+      VerifyOrderChange(
+        source.Where(p => p.Category != Category.Completed && p.Category != Category.Scheduled).ToList(), result, 0);
     }
 
     [Test]
-    public void TestChangeCategory(
-      [Values(Category.Today, Category.Tomorrow, Category.NextWeek, Category.Completed)]
+    public void TestAddScheduled()
+    {
+      ImmutableList<SortData> source = CreateCorrectlyOrderedSut(0);
+      SortData item = new SortData(Guid.NewGuid(), Category.Scheduled, 0);
+
+      ImmutableList<SortData> result = SortingService.AddItem(source.ToList(), item);
+
+      VerifyInvariants(result);
+
+      // test updated index
+      Assert.AreEqual(int.MaxValue, result.Single(p => p.Id == item.Id).SortOrder);
+
+      // no indexes should have changed
+      VerifyOrderChange(
+        source.Where(p => p.Category != Category.Completed && p.Category != Category.Scheduled).ToList(), result, 0);
+    }
+
+    [Test]
+    public void TestChangeActiveCategory(
+      [Values(Category.Today, Category.Tomorrow, Category.NextWeek, Category.Completed, Category.Scheduled)]
       Category from,
       [Values(Category.Today, Category.Tomorrow, Category.NextWeek)]
       Category to)
@@ -215,9 +243,8 @@ namespace TimePlanner.Domain.UnitTests.Utils
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
       SortData item = source.First(p => p.Category == from);
 
-      ImmutableList<SortData> result = Sorting.ChangeCategory(source.ToList(), item.Id, to);
+      ImmutableList<SortData> result = SortingService.ChangeCategory(source.ToList(), item.Id, to);
 
-      // The expected result is the ordered list with adjacent correct sortOrders (reset for Completed)
       VerifyInvariants(result);
 
       // test that SortData is at the bottom of its category
@@ -238,7 +265,8 @@ namespace TimePlanner.Domain.UnitTests.Utils
         VerifyOrderChange(middle, result, -1);
 
         // test that orders below insertion are untouched
-        var below = source.Skip(newIndex + 1).Where(p => p.Category != Category.Completed).ToList();
+        var below = source.Skip(newIndex + 1)
+          .Where(p => p.Category != Category.Completed && p.Category != Category.Scheduled).ToList();
         VerifyOrderChange(below, result, 0);
       }
 
@@ -249,25 +277,25 @@ namespace TimePlanner.Domain.UnitTests.Utils
         VerifyOrderChange(above, result, 0);
 
         // test that orders below new location and above old location are increased
-        var middle = source.Take(oldIndex).Skip(newIndex).ToList();
+        var middle = source.Take(oldIndex).Skip(newIndex).Where(i => i.Category != Category.Completed && i.Category != Category.Scheduled).ToList();
         VerifyOrderChange(middle, result, 1);
 
         // test that orders below insertion are untouched
-        var below = source.Skip(oldIndex + 1).Where(p => p.Category != Category.Completed).ToList();
+        var below = source.Skip(oldIndex + 1)
+          .Where(p => p.Category != Category.Completed && p.Category != Category.Scheduled).ToList();
         VerifyOrderChange(below, result, 0);
       }
     }
 
     [Test]
-    public void TestChangeCategoryToCompleted(
+    public void TestChangeActiveCategoryToCompleted(
       [Values(Category.Today, Category.Tomorrow, Category.NextWeek)] Category from)
     {
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
       SortData item = source.First(p => p.Category == from);
 
-      ImmutableList<SortData> result = Sorting.ChangeCategory(source.ToList(), item.Id, Category.Completed);
+      ImmutableList<SortData> result = SortingService.ChangeCategory(source.ToList(), item.Id, Category.Completed);
 
-      // The expected result is the ordered list with adjacent correct sortOrders (reset for Completed)
       VerifyInvariants(result);
 
       // test that SortData is at the bottom
@@ -278,20 +306,80 @@ namespace TimePlanner.Domain.UnitTests.Utils
       VerifyOrderChange(above, result, 0);
 
       // test that orders below old location are decreased
-      var middle = source.Where(i => i.SortOrder > item.SortOrder).Where(i => i.Category!=Category.Completed).ToList();
+      var middle = source.Where(i => i.SortOrder > item.SortOrder)
+        .Where(i => i.Category != Category.Completed && i.Category != Category.Scheduled ).ToList();
       VerifyOrderChange(middle, result, -1);
+    }
+
+    [Test]
+    public void TestChangeScheduledCategoryToCompleted()
+    {
+      ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
+      SortData item = source.First(p => p.Category == Category.Scheduled);
+
+      ImmutableList<SortData> result = SortingService.ChangeCategory(source.ToList(), item.Id, Category.Completed);
+
+      VerifyInvariants(result);
+
+      // test that SortData is at the bottom
+      Assert.AreEqual(item.Id, result.Last().Id);
+
+      // test that active categories are untouched
+      var above = source.Where(i => i.Category != Category.Completed && i.Category != Category.Scheduled).ToList();
+      VerifyOrderChange(above, result, 0);
+    }
+
+    [Test]
+    public void TestChangeCategoryToScheduled(
+      [Values(Category.Today, Category.Tomorrow, Category.NextWeek)] Category from)
+    {
+      ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
+      SortData item = source.First(p => p.Category == from);
+
+      ImmutableList<SortData> result = SortingService.ChangeCategory(source.ToList(), item.Id, Category.Scheduled);
+
+      VerifyInvariants(result);
+
+      // test that SortData is at the bottom
+      Assert.AreEqual(item.Id, result.Last().Id);
+
+      // test that orders above old location are untouched
+      var above = source.Take(item.SortOrder).ToList();
+      VerifyOrderChange(above, result, 0);
+
+      // test that orders below old location are decreased
+      var middle = source.Where(i => i.SortOrder > item.SortOrder)
+        .Where(i => i.Category != Category.Completed && i.Category != Category.Scheduled).ToList();
+      VerifyOrderChange(middle, result, -1);
+    }
+
+    [Test]
+    public void TestChangeCompletedCategoryToScheduled()
+    {
+      ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
+      SortData item = source.First(p => p.Category == Category.Completed);
+
+      ImmutableList<SortData> result = SortingService.ChangeCategory(source.ToList(), item.Id, Category.Scheduled);
+
+      VerifyInvariants(result);
+
+      // test that SortData is at the bottom
+      Assert.AreEqual(item.Id, result.Last().Id);
+
+      // test that active categories are untouched
+      var above = source.Where(i => i.Category != Category.Completed && i.Category != Category.Scheduled).ToList();
+      VerifyOrderChange(above, result, 0);
     }
 
     [TestCase(Category.Today)]
     [TestCase(Category.Tomorrow)]
     [TestCase(Category.NextWeek)]
-    [TestCase(Category.Completed)]
-    public void TestDelete(Category category)
+    public void TestDeleteFromActiveCategory(Category category)
     {
       ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
       SortData item = source.First(p => p.Category == category);
 
-      ImmutableList<SortData> result = Sorting.DeleteItem(source.ToList(), item.Id);
+      ImmutableList<SortData> result = SortingService.DeleteItem(source.ToList(), item.Id);
 
       VerifyInvariants(result);
 
@@ -303,8 +391,25 @@ namespace TimePlanner.Domain.UnitTests.Utils
         VerifyOrderChange(above, result, 0);
       }
 
-      var below = source.Where(p => p.Category != Category.Completed).Skip(item.SortOrder + 1).ToList();
+      var below = source.Where(p => p.Category != Category.Completed && p.Category != Category.Scheduled)
+        .Skip(item.SortOrder + 1).ToList();
       VerifyOrderChange(below, result, -1);
+    }
+
+    [TestCase(Category.Completed)]
+    [TestCase(Category.Scheduled)]
+    public void TestDeleteFromNonSortedCategory(Category category)
+    {
+      ImmutableList<SortData> source = CreateCorrectlyOrderedSut(1);
+      SortData item = source.First(p => p.Category == category);
+
+      ImmutableList<SortData> result = SortingService.DeleteItem(source.ToList(), item.Id);
+
+      VerifyInvariants(result);
+
+      // Test that active categories are untouched
+      var active = source.Where(i => i.Category != Category.Completed && i.Category != Category.Scheduled).ToList();
+      VerifyOrderChange(active, result, 0);
     }
 
     [TestCase(Category.Today)]
@@ -317,7 +422,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
 
       // move 1 to 3
       SortData SortData = source.Where(p => p.Category == category).ToList()[1];
-      ImmutableList<SortData> result = Sorting.ChangeSortOrder(source.ToList(), SortData, 2);
+      ImmutableList<SortData> result = SortingService.ChangeSortOrder(source.ToList(), SortData, 2);
 
       // The expected result is the ordered list with adjacent correct sortOrders (reset for Completed)
       VerifyInvariants(result);
@@ -335,7 +440,8 @@ namespace TimePlanner.Domain.UnitTests.Utils
       VerifyOrderChange(middle, result, -1);
 
       // test that orders below insertion are untouched
-      var below = source.Where(p => p.SortOrder > SortData.SortOrder + 2).Where(p => p.Category != Category.Completed).ToList();
+      var below = source.Where(p => p.SortOrder > SortData.SortOrder + 2)
+        .Where(p => p.Category != Category.Completed && p.Category != Category.Scheduled).ToList();
       VerifyOrderChange(below, result, 0);
     }
 
@@ -349,7 +455,7 @@ namespace TimePlanner.Domain.UnitTests.Utils
 
       // move 3 to 1
       SortData SortData = source.Where(p => p.Category == category).ToList()[^1];
-      ImmutableList<SortData> result = Sorting.ChangeSortOrder(source.ToList(), SortData, -2);
+      ImmutableList<SortData> result = SortingService.ChangeSortOrder(source.ToList(), SortData, -2);
 
       // The expected result is the ordered list with adjacent correct sortOrders (reset for Completed)
       VerifyInvariants(result);
@@ -367,7 +473,8 @@ namespace TimePlanner.Domain.UnitTests.Utils
       VerifyOrderChange(middle, result, 1);
 
       // test that orders below insertion are untouched
-      var below = source.Where(i => i.SortOrder > SortData.SortOrder + 2).Where(p => p.Category != Category.Completed).ToList();
+      var below = source.Where(i => i.SortOrder > SortData.SortOrder + 2)
+        .Where(p => p.Category != Category.Completed && p.Category != Category.Scheduled).ToList();
       VerifyOrderChange(below, result, 0);
     }
 
@@ -383,22 +490,10 @@ namespace TimePlanner.Domain.UnitTests.Utils
       var second = elements[1];
       list[second.SortOrder] = list[second.SortOrder] with { SortOrder = 1000};
       var third = new SortData(Guid.NewGuid(), category, 0);
-      ImmutableList<SortData> result;
-      switch (category)
-      {
-        case Category.Today:
-          result = Sorting.AddToday(list, third);
-          break;
-        case Category.Tomorrow:
-          result = Sorting.AddTomorrow(list, third);
-          break;
-        case Category.NextWeek:
-          result = Sorting.AddNextWeek(list, third);
-          break;
-        default:
-          throw new ApplicationException("should never happen");
-      }
+      ImmutableList<SortData> result = SortingService.AddItem(list, third);
+
       VerifyInvariants(result);
+
       var three = result.Where(i => i.Category == category).TakeLast(3).ToList();
       Assert.AreEqual(first.Id, three[0].Id);
       Assert.AreEqual(second.Id, three[1].Id);

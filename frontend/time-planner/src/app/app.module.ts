@@ -12,6 +12,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { WorkItemEditorComponent } from './work-item-editor/work-item-editor.component';
 import { WorkItemDetailsComponent } from './work-item-details/work-item-details.component';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { NgbDateParserFormatter } from '@ng-bootstrap/ng-bootstrap';
+import { CustomDateParserFormatter } from './work-item-editor/date-adapters';
 
 @NgModule({
   declarations: [
@@ -30,7 +32,9 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
     NgbModule,
     DragDropModule
   ],
-  providers: [],
+  providers: [
+    {provide: NgbDateParserFormatter, useClass: CustomDateParserFormatter}
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

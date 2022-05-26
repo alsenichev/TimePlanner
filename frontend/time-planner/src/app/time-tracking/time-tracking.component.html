@@ -14,7 +14,7 @@
       <div class="row">
 
         <div class="col-lg-2">
-          <ul ngbNav #nav="ngbNav" [(activeId)]="active" class="nav-pills" orientation="vertical">
+          <ul ngbNav #nav="ngbNav" [(activeId)]="active" class="nav-pills" orientation="vertical" (navChange)="navChange()">
             <li ngbNavItem="today">
               <a ngbNavLink>Today</a>
               <ng-template ngbNavContent>
@@ -49,6 +49,14 @@
               <a ngbNavLink>Completed</a>
               <ng-template ngbNavContent>
                 <div *ngFor="let workItem of completedWorkItems"> 
+                  <app-work-item-details [workItem]="workItem" (workItemChanged)="onWorkItemChanged($event)" (workItemEdit)="onEditWorkItem($event)"></app-work-item-details>
+                </div>
+              </ng-template>
+            </li>
+            <li ngbNavItem="scheduled">
+              <a ngbNavLink>Scheduled</a>
+              <ng-template ngbNavContent>
+                <div *ngFor="let workItem of scheduledWorkItems"> 
                   <app-work-item-details [workItem]="workItem" (workItemChanged)="onWorkItemChanged($event)" (workItemEdit)="onEditWorkItem($event)"></app-work-item-details>
                 </div>
               </ng-template>

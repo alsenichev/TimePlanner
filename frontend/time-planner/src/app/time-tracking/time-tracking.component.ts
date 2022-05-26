@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MessageService } from '../messages/message.service';
 import { Status } from './models/status';
-import { WorkItem } from './models/work-item';
+import { WorkItem, WorkItemUpdateRequest } from './models/work-item';
 import { TimeTrackingService } from './time-tracking.service';
 import { FormBuilder } from '@angular/forms';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
@@ -29,13 +29,17 @@ export class TimeTrackingComponent implements OnInit {
   nextWeekWorkItems? : WorkItem[];
   someDayWorkItems? : WorkItem[];
   completedWorkItems? : WorkItem[];
+  scheduledWorkItems? : WorkItem[];
 
    filterWorkItems(items: WorkItem[]){
     this.todayWorkItems = items.filter(i => i.category == 'Today');
     this.tomorrowWorkItems = items.filter(i => i.category == 'Tomorrow');
     this.nextWeekWorkItems = items.filter(i => i.category == 'NextWeek');
     this.completedWorkItems = items.filter(i => i.category == 'Completed');
-    this.completedWorkItems.sort((i,j)=> Date.parse(j.completedAt!) - Date.parse(i.completedAt!));
+    this.completedWorkItems.sort((i,j) => Date.parse(j.completedAt!) - Date.parse(i.completedAt!));
+    this.scheduledWorkItems = items.filter(i => i.category == 'Scheduled');
+    this.scheduledWorkItems.sort((i,j) => Date.parse(i.nextTime!) - Date.parse(j.nextTime!));
+
   }
 
   loadWorkItems(){
@@ -61,18 +65,22 @@ export class TimeTrackingComponent implements OnInit {
     this.currentWorkItem = workItem;
   }
 
-  onWorkItemChanged(workItem: WorkItem){
+  onWorkItemChanged(workItem: WorkItemUpdateRequest){
     this.timeTrackingService.updateWorkItem(workItem).subscribe(wi=>{
       this.loadWorkItems();
       this.currentWorkItem = undefined;
     });
   }
 
+  navChange(){
+    this.currentWorkItem = undefined;
+  }
+
   onWorkItemDeleted(workItem: WorkItem){
     this.timeTrackingService.deleteWorkItem(workItem.id).subscribe(_ =>{
       this.loadWorkItems();
       this.currentWorkItem = undefined;
-      this.messageService.add(`Deleted work item: ${workItem.name}.`);
+      this.messageService.addInfo(`Deleted work item: ${workItem.name}.`);
     });
   }
 
@@ -91,15 +99,27 @@ export class TimeTrackingComponent implements OnInit {
   reorderWorkItems(source: WorkItem[], event: CdkDragDrop<string[]>){
     let workItem: WorkItem = source[event.previousIndex];
     let diff:number = event.currentIndex - event.previousIndex;
-    workItem.sortOrder += diff;
-    this.timeTrackingService.updateWorkItem(workItem).subscribe(wi=>{
+    let request: WorkItemUpdateRequest = {
+      id: workItem.id,
+      category: workItem.category,
+      name: workItem.name,
+      sortOrder: workItem.sortOrder + diff,
+      updateRecurrence: false,
+      cronExpression: workItem.cronExpression,
+      isAfterPreviousCompleted: workItem.isAfterPreviousCompleted,
+      maxRepetetionsCount: workItem.maxRepetetionsCount,
+      recurrenceStartsOn: workItem.recurrenceStartsOn,
+      recurrenceEndsOn: workItem.recurrenceEndsOn,
+      isOnPause: workItem.isOnPause
+    }
+    this.timeTrackingService.updateWorkItem(request).subscribe(wi => {
+      this.currentWorkItem = undefined;
       this.loadWorkItems();
     });
   }
 
 
   ngOnInit(): void {
-    //this.loadStatus();
     this.loadWorkItems();
   }
 

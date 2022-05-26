@@ -6,20 +6,21 @@
   public record struct WorkItem(
     Guid? Id,
     string Name,
-    List<Duration> Durations,
     Category Category,
-    WakingUp? WakingUp,
-    Recurrence? Recurrence,
-    History History,
-    int SortOrder);
-
-  public record struct History(DateTime CreatedAt, DateTime? CompletedAt);
+    DateTime CreatedAt,
+    DateTime? CompletedAt,
+    DateTime? NextTime,
+    string? CronExpression,
+    DateTime? RecurrenceStartsOn,
+    DateTime? RecurrenceEndsOn,
+    bool? IsIfPreviousCompleted,
+    int? MaxRepetitionCount,
+    int? RepetitionCount,
+    bool? IsOnPause,
+    int SortOrder,
+    List<Duration> Durations);
 
   public record struct Duration(int? id, DateOnly Date, TimeSpanValue Value);
-
-  public record struct WakingUp(DateOnly When, Category Where);
-
-  public record struct Recurrence(int Days);
 
   public enum Category
   {
@@ -27,5 +28,7 @@
     Tomorrow,
     NextWeek,
     Completed,
+    Scheduled,
+    Archived
   }
 }

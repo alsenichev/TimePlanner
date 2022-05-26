@@ -6,6 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Utils\**" />
+    <EmbeddedResource Remove="Utils\**" />
+    <None Remove="Utils\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="autofixture" Version="4.17.0" />
     <PackageReference Include="autofixture.automoq" Version="4.17.0" />
     <PackageReference Include="autofixture.nunit3" Version="4.17.0" />
