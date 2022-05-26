@@ -1,0 +1,76 @@
+<div class="container-fluid">
+
+  <div class="row my-3">
+    <div class="col-lg-7">
+      <div class="input-group">
+        <input type="text" class="form-control" placeholder="Create a work item" required [(ngModel)]="newWorkItemName" (keyup.enter)="createWorkItem()">
+        <button class="btn btn-outline-primary" type="button" (click)="createWorkItem()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="row">
+
+        <div class="col-lg-2">
+          <ul ngbNav #nav="ngbNav" [(activeId)]="active" class="nav-pills" orientation="vertical" (navChange)="navChange()">
+            <li ngbNavItem="today">
+              <a ngbNavLink>Today</a>
+              <ng-template ngbNavContent>
+                <div cdkDropList (cdkDropListDropped)="dropToday($event)">
+                  <div cdkDrag *ngFor="let workItem of todayWorkItems"> 
+                    <app-work-item-details [workItem]="workItem" (workItemChanged)="onWorkItemChanged($event)" (workItemEdit)="onEditWorkItem($event)"></app-work-item-details>
+                  </div>
+                </div>
+              </ng-template>
+            </li>
+            <li ngbNavItem="tomorrow">
+              <a ngbNavLink>Tomorrow</a>
+              <ng-template ngbNavContent>
+                <div cdkDropList (cdkDropListDropped)="dropTomorrow($event)">
+                  <div cdkDrag *ngFor="let workItem of tomorrowWorkItems"> 
+                    <app-work-item-details [workItem]="workItem" (workItemChanged)="onWorkItemChanged($event)" (workItemEdit)="onEditWorkItem($event)"></app-work-item-details>
+                  </div>
+                </div>
+              </ng-template>
+            </li>
+            <li ngbNavItem="nextWeek">
+              <a ngbNavLink>Next Week</a>
+              <ng-template ngbNavContent>
+                <div cdkDropList (cdkDropListDropped)="dropNextWeek($event)">
+                  <div cdkDrag *ngFor="let workItem of nextWeekWorkItems"> 
+                    <app-work-item-details [workItem]="workItem" (workItemChanged)="onWorkItemChanged($event)" (workItemEdit)="onEditWorkItem($event)"></app-work-item-details>
+                  </div>
+                </div>
+              </ng-template>
+            </li>
+            <li ngbNavItem="completed">
+              <a ngbNavLink>Completed</a>
+              <ng-template ngbNavContent>
+                <div *ngFor="let workItem of completedWorkItems"> 
+                  <app-work-item-details [workItem]="workItem" (workItemChanged)="onWorkItemChanged($event)" (workItemEdit)="onEditWorkItem($event)"></app-work-item-details>
+                </div>
+              </ng-template>
+            </li>
+            <li ngbNavItem="scheduled">
+              <a ngbNavLink>Scheduled</a>
+              <ng-template ngbNavContent>
+                <div *ngFor="let workItem of scheduledWorkItems"> 
+                  <app-work-item-details [workItem]="workItem" (workItemChanged)="onWorkItemChanged($event)" (workItemEdit)="onEditWorkItem($event)"></app-work-item-details>
+                </div>
+              </ng-template>
+            </li>
+          </ul>
+          </div>
+
+          <div class="col-lg-10">
+            <div [ngbNavOutlet]="nav"></div>
+          </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <app-work-item-editor [currentWorkItem]="currentWorkItem" (editComplete)="onWorkItemChanged($event)" (workItemDeleted)="onWorkItemDeleted($event)"></app-work-item-editor>
+    </div>
+  </div>
+</div>
